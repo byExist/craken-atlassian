@@ -74,16 +74,16 @@ def list_spaces(
         Literal["current", "archived"] | None,
         Field(description="Filter by status."),
     ] = None,
-    cursor: Cursor = None,
     limit: Limit = 25,
+    cursor: Cursor = None,
 ) -> MultiEntityResultSpace:
     """List spaces."""
     return client.list_spaces(
         keys=keys,
         space_type=space_type,
         status=status,
-        cursor=cursor,
         limit=limit,
+        cursor=cursor,
     )
 
 
@@ -112,9 +112,12 @@ def list_pages(
     space: SpaceKeyOrId,
     title: Annotated[str | None, Field(description="Filter by exact title.")] = None,
     limit: Limit = 25,
+    cursor: Cursor = None,
 ) -> MultiEntityResultPage:
     """List pages in a space. Body is omitted; use get_page for full content."""
-    result = client.list_pages(client.resolve_space_id(space), title=title, limit=limit)
+    result = client.list_pages(
+        client.resolve_space_id(space), title=title, limit=limit, cursor=cursor
+    )
     for page in result.results:
         page.body = None
     return result
@@ -141,9 +144,11 @@ def get_page(
     return page
 
 
-def get_page_children(page_id: PageId, limit: Limit = 25) -> MultiEntityResultChildPage:
+def get_page_children(
+    page_id: PageId, limit: Limit = 25, cursor: Cursor = None
+) -> MultiEntityResultChildPage:
     """Get a page's direct child pages."""
-    return client.get_page_children(page_id, limit=limit)
+    return client.get_page_children(page_id, limit=limit, cursor=cursor)
 
 
 def get_page_descendants(
@@ -152,16 +157,17 @@ def get_page_descendants(
     depth: Annotated[
         int | None, Field(description="Max depth; omit for the full subtree.")
     ] = None,
+    cursor: Cursor = None,
 ) -> MultiEntityResultChildPage:
     """Get all descendant pages (full subtree). get_page_children is one level; this is the whole tree."""
-    return client.get_page_descendants(page_id, depth=depth, limit=limit)
+    return client.get_page_descendants(page_id, depth=depth, limit=limit, cursor=cursor)
 
 
 def get_page_versions(
-    page_id: PageId, limit: Limit = 25
+    page_id: PageId, limit: Limit = 25, cursor: Cursor = None
 ) -> MultiEntityResultPageVersion:
     """Get a page's version history."""
-    return client.get_page_versions(page_id, limit=limit)
+    return client.get_page_versions(page_id, limit=limit, cursor=cursor)
 
 
 def get_ancestors(page_id: PageId) -> MultiEntityResultAncestor:
@@ -179,9 +185,11 @@ def get_likes(page_id: PageId) -> dict[str, int]:
     return {"count": client.get_likes_count(page_id)}
 
 
-def get_attachments(page_id: PageId, limit: Limit = 25) -> MultiEntityResultAttachment:
+def get_attachments(
+    page_id: PageId, limit: Limit = 25, cursor: Cursor = None
+) -> MultiEntityResultAttachment:
     """Get a page's attachments."""
-    return client.get_attachments(page_id, limit=limit)
+    return client.get_attachments(page_id, limit=limit, cursor=cursor)
 
 
 def download_attachment(
@@ -271,10 +279,11 @@ def list_blog_posts(
         str | None, Field(description="Filter by space key or numeric id.")
     ] = None,
     limit: Limit = 25,
+    cursor: Cursor = None,
 ) -> MultiEntityResultBlogPost:
     """List blog posts. Body is omitted; use get_blog_post for full content."""
     space_id = client.resolve_space_id(space) if space is not None else None
-    result = client.list_blog_posts(space_id=space_id, limit=limit)
+    result = client.list_blog_posts(space_id=space_id, limit=limit, cursor=cursor)
     for post in result.results:
         post.body = None
     return result
@@ -372,10 +381,10 @@ def delete_blog_post(
 
 
 def get_comments(
-    page_id: PageId, limit: Limit = 25, plain: Plain = True
+    page_id: PageId, limit: Limit = 25, plain: Plain = True, cursor: Cursor = None
 ) -> MultiEntityResultComment:
     """Get a page's footer comments. Body is Markdown."""
-    result = client.get_comments(page_id, limit=limit)
+    result = client.get_comments(page_id, limit=limit, cursor=cursor)
     for comment in result.results:
         if isinstance(comment.body, dict):
             comment.body = to_md(comment.body, plain=plain)
@@ -422,10 +431,10 @@ def reply_to_comment(
 
 
 def get_comment_replies(
-    comment_id: CommentId, limit: Limit = 25, plain: Plain = True
+    comment_id: CommentId, limit: Limit = 25, plain: Plain = True, cursor: Cursor = None
 ) -> MultiEntityResultComment:
     """Get replies to a footer comment. Body is Markdown."""
-    result = client.get_comment_children(comment_id, limit=limit)
+    result = client.get_comment_children(comment_id, limit=limit, cursor=cursor)
     for comment in result.results:
         if isinstance(comment.body, dict):
             comment.body = to_md(comment.body, plain=plain)
@@ -436,10 +445,10 @@ def get_comment_replies(
 
 
 def get_inline_comments(
-    page_id: PageId, limit: Limit = 25, plain: Plain = True
+    page_id: PageId, limit: Limit = 25, plain: Plain = True, cursor: Cursor = None
 ) -> MultiEntityResultInlineComment:
     """Get a page's inline comments. Body is Markdown."""
-    result = client.get_inline_comments(page_id, limit=limit)
+    result = client.get_inline_comments(page_id, limit=limit, cursor=cursor)
     for comment in result.results:
         if isinstance(comment.body, dict):
             comment.body = to_md(comment.body, plain=plain)
@@ -480,10 +489,10 @@ def delete_inline_comment(comment_id: CommentId) -> str:
 
 
 def get_inline_comment_replies(
-    comment_id: CommentId, limit: Limit = 25, plain: Plain = True
+    comment_id: CommentId, limit: Limit = 25, plain: Plain = True, cursor: Cursor = None
 ) -> MultiEntityResultInlineComment:
     """Get replies to an inline comment. Body is Markdown."""
-    result = client.get_inline_comment_children(comment_id, limit=limit)
+    result = client.get_inline_comment_children(comment_id, limit=limit, cursor=cursor)
     for comment in result.results:
         if isinstance(comment.body, dict):
             comment.body = to_md(comment.body, plain=plain)
@@ -493,9 +502,11 @@ def get_inline_comment_replies(
 # --- Label ---
 
 
-def get_labels(page_id: PageId) -> MultiEntityResultLabel:
+def get_labels(
+    page_id: PageId, limit: Limit = 25, cursor: Cursor = None
+) -> MultiEntityResultLabel:
     """Get a page's labels."""
-    return client.get_labels(page_id)
+    return client.get_labels(page_id, limit=limit, cursor=cursor)
 
 
 def add_label(
@@ -615,9 +626,12 @@ def get_tasks(
     ] = None,
     limit: Limit = 25,
     plain: Plain = True,
+    cursor: Cursor = None,
 ) -> MultiEntityResultTask:
     """Get inline tasks (action items). Body is Markdown."""
-    result = client.list_tasks(page_id=page_id, status=status, limit=limit)
+    result = client.list_tasks(
+        page_id=page_id, status=status, limit=limit, cursor=cursor
+    )
     for task in result.results:
         if isinstance(task.body, dict):
             task.body = to_md(task.body, plain=plain)

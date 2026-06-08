@@ -40,7 +40,7 @@ def test_list_pages_strips_bodies(mocker: MockerFixture):
 
     out = tools.list_pages("1", title="x")
 
-    assert list_pages.call_args == call("1", title="x", limit=25)
+    assert list_pages.call_args == call("1", title="x", limit=25, cursor=None)
     assert out.results[0].body is None
 
 
@@ -370,7 +370,7 @@ def test_write_tools_return_ok(
         (
             lambda: tools.list_spaces(limit=10),
             "list_spaces",
-            call(keys=None, space_type=None, status=None, cursor=None, limit=10),
+            call(keys=None, space_type=None, status=None, limit=10, cursor=None),
         ),
         (
             lambda: tools.search_content("cql", limit=10),
@@ -380,31 +380,35 @@ def test_write_tools_return_ok(
         (
             lambda: tools.get_page_children("p1", limit=10),
             "get_page_children",
-            call("p1", limit=10),
+            call("p1", limit=10, cursor=None),
         ),
         (
             lambda: tools.get_page_descendants("p1", limit=10),
             "get_page_descendants",
-            call("p1", depth=None, limit=10),
+            call("p1", depth=None, limit=10, cursor=None),
         ),
         (
             lambda: tools.get_page_versions("p1", limit=10),
             "get_page_versions",
-            call("p1", limit=10),
+            call("p1", limit=10, cursor=None),
         ),
         (lambda: tools.get_ancestors("p1"), "get_ancestors", call("p1")),
         (lambda: tools.get_page_views("p1"), "get_page_views", call("p1")),
         (
             lambda: tools.get_attachments("p1", limit=10),
             "get_attachments",
-            call("p1", limit=10),
+            call("p1", limit=10, cursor=None),
         ),
         (
             lambda: tools.search_users("cql", limit=10),
             "search_users",
             call("cql", limit=10),
         ),
-        (lambda: tools.get_labels("p1"), "get_labels", call("p1")),
+        (
+            lambda: tools.get_labels("p1"),
+            "get_labels",
+            call("p1", limit=25, cursor=None),
+        ),
     ],
 )
 def test_reader_delegates_to_client(
