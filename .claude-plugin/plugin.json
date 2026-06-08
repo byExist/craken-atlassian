@@ -1,0 +1,33 @@
+{
+  "name": "atlassian",
+  "description": "Atlassian (JIRA, Confluence) integration via MCP",
+  "repository": "https://github.com/byExist/craken-atlassian",
+  "defaultEnabled": false,
+  "userConfig": {
+    "atlassian_url": {
+      "type": "string",
+      "title": "Atlassian site URL",
+      "description": "Your Atlassian Cloud site, e.g. https://yourcompany.atlassian.net",
+      "required": true
+    },
+    "atlassian_user": {
+      "type": "string",
+      "title": "Atlassian account email",
+      "description": "Email of the account that owns the API token, e.g. you@company.com",
+      "required": true
+    },
+    "atlassian_token": {
+      "type": "string",
+      "title": "Atlassian API token",
+      "description": "API token for authentication. Stored in the OS keychain, not in settings.json. Create one at id.atlassian.com → Security → API tokens.",
+      "sensitive": true,
+      "required": true
+    },
+    "write_enabled": {
+      "type": "boolean",
+      "title": "Enable write operations",
+      "description": "Expose write tools (create / update / delete) for Jira and Confluence. Off by default — only read tools are available. Reload the plugin after changing.",
+      "default": false
+    }
+  }
+}

@@ -1,0 +1,20 @@
+# Lint and type-check on commit. pre-commit is a dev dependency; after `uv sync`,
+# enable once per clone with `uv run pre-commit install`.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # pyright runs through uv so it resolves the project's deps and its strict
+  # [tool.pyright] config; checks the whole package, not just changed files.
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright (strict)
+        entry: uv run pyright
+        language: system
+        types: [python]
+        pass_filenames: false

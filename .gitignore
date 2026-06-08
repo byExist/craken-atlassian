@@ -1,0 +1,8 @@
+docs/
+__pycache__/
+.venv/
+
+# Editor + test/coverage artifacts (never distributed; wheel ships only src/atlassian)
+.vscode/
+.pytest_cache/
+.coverage
