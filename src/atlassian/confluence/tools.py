@@ -194,7 +194,7 @@ def create_page(
         str | None, Field(description="Absolute path to read the content from.")
     ] = None,
 ) -> str:
-    """Create a page; returns the created identifier. Provide content inline or via from_file, not both."""
+    """Create a page; returns the page id. Provide content inline or via from_file, not both."""
     if content and from_file:
         raise ValueError("provide either content or from_file, not both")
     if from_file is not None:
@@ -290,7 +290,7 @@ def create_blog_post(
         str | None, Field(description="Absolute path to read the content from.")
     ] = None,
 ) -> str:
-    """Create a blog post; returns the created identifier. Provide content inline or via from_file, not both."""
+    """Create a blog post; returns the blog post id. Provide content inline or via from_file, not both."""
     if content and from_file:
         raise ValueError("provide either content or from_file, not both")
     if from_file is not None:

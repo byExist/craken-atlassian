@@ -15,7 +15,6 @@ from atlassian.jira.schema.component import Component
 from atlassian.jira.schema.epic import Epic
 from atlassian.jira.schema.field import PageBeanField
 from atlassian.jira.schema.issue import (
-    CreatedIssue,
     IssueBean,
     SearchAndReconcileResults,
     SearchResults,
@@ -162,19 +161,20 @@ def create_issue(
         str | None,
         Field(description="Absolute path to read the description from."),
     ] = None,
-) -> CreatedIssue:
-    """Create an issue. Provide description inline or via from_file, not both."""
+) -> str:
+    """Create an issue; returns the issue key. Provide description inline or via from_file, not both."""
     if description and from_file:
         raise ValueError("provide either description or from_file, not both")
     if from_file is not None:
         description = read_body(from_file)
-    return client.create_issue(
+    issue = client.create_issue(
         project_key,
         summary,
         issue_type=issue_type,
         description=to_adf(description) if description else None,
         assignee=assignee,
     )
+    return str(issue.key)
 
 
 def update_issue(
@@ -622,7 +622,7 @@ def create_sprint(
     start_date: Annotated[str | None, Field(description=_SPRINT_DATE)] = None,
     end_date: Annotated[str | None, Field(description=_SPRINT_DATE)] = None,
 ) -> str:
-    """Create a sprint; returns the created identifier."""
+    """Create a sprint; returns the sprint id."""
     sprint = client.create_sprint(
         int(board_id),
         name,
@@ -754,7 +754,7 @@ def create_version(
     release_date: Annotated[str | None, Field(description=_VERSION_DATE)] = None,
     released: Annotated[bool, Field(description="Mark as released.")] = False,
 ) -> str:
-    """Create a version (release); returns the created identifier."""
+    """Create a version (release); returns the version id."""
     version = client.create_version(
         project_key,
         name,

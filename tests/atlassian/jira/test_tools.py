@@ -202,7 +202,7 @@ def test_create_issue_converts_markdown_to_adf(mocker: MockerFixture):
     assert create.call_args == call(
         "ABC", "Title", issue_type="Task", description={"adf": True}, assignee=None
     )
-    assert isinstance(out, CreatedIssue)
+    assert out == "A-9"
 
 
 def test_create_issue_passes_none_when_no_description(mocker: MockerFixture):
