@@ -61,13 +61,14 @@ def test_get_current_user_expands_personal_space(confluence_api: MockServer):
     assert user.personal_space.key == "~a"
 
 
-def test_search_content_passes_cql_and_limit(confluence_api: MockServer):
+def test_search_content_passes_cql_start_and_limit(confluence_api: MockServer):
     confluence_api.add("GET", "/wiki/rest/api/search", json={"results": [], "size": 0})
 
-    result = client.search_content("type=page", limit=10)
+    result = client.search_content("type=page", start=20, limit=10)
 
     req = confluence_api.request("GET", "/wiki/rest/api/search")
     assert req.url.params["cql"] == "type=page"
+    assert req.url.params["start"] == "20"
     assert req.url.params["limit"] == "10"
     assert isinstance(result, SearchResults)
 
@@ -75,9 +76,10 @@ def test_search_content_passes_cql_and_limit(confluence_api: MockServer):
 def test_search_users_uses_user_search_path(confluence_api: MockServer):
     confluence_api.add("GET", "/wiki/rest/api/search/user", json={"results": []})
 
-    client.search_users("user.fullname~alice")
+    client.search_users("user.fullname~alice", start=5)
 
     assert confluence_api.last.url.params["cql"] == "user.fullname~alice"
+    assert confluence_api.last.url.params["start"] == "5"
 
 
 def test_get_page_views_returns_content_views(confluence_api: MockServer):

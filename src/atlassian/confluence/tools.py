@@ -36,6 +36,7 @@ Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
 Cursor: TypeAlias = Annotated[
     str | None, Field(description="Pagination cursor from a prior result.")
 ]
+Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based).")]
 Plain: TypeAlias = Annotated[
     bool, Field(description="Set false to keep ADF-only features for editing.")
 ]
@@ -102,10 +103,11 @@ def get_space(space: SpaceKeyOrId) -> Space:
 
 def search_content(
     cql: Annotated[str, Field(description="CQL query.")],
+    start: Offset = 0,
     limit: Limit = 25,
 ) -> SearchResults:
     """Search content by CQL. Use get_page for full content."""
-    return client.search_content(cql, limit=limit)
+    return client.search_content(cql, start=start, limit=limit)
 
 
 def list_pages(
@@ -203,10 +205,11 @@ def download_attachment(
 
 def search_users(
     cql: Annotated[str, Field(description="CQL query.")],
+    start: Offset = 0,
     limit: Limit = 25,
 ) -> SearchResults:
     """Search users by CQL."""
-    return client.search_users(cql, limit=limit)
+    return client.search_users(cql, start=start, limit=limit)
 
 
 def create_page(

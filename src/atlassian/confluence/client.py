@@ -146,11 +146,12 @@ def get_current_user() -> User:
 def search_content(
     cql: str,
     *,
+    start: int = 0,
     limit: int = 25,
 ) -> SearchResults:
     resp = _get_client().get(
         "/wiki/rest/api/search",
-        params={"cql": cql, "limit": limit},
+        params={"cql": cql, "start": start, "limit": limit},
     )
     resp.raise_for_status()
     return SearchResults.model_validate(resp.json())
@@ -159,11 +160,12 @@ def search_content(
 def search_users(
     cql: str,
     *,
+    start: int = 0,
     limit: int = 25,
 ) -> SearchResults:
     resp = _get_client().get(
         "/wiki/rest/api/search/user",
-        params={"cql": cql, "limit": limit},
+        params={"cql": cql, "start": start, "limit": limit},
     )
     resp.raise_for_status()
     return SearchResults.model_validate(resp.json())

@@ -375,7 +375,7 @@ def test_write_tools_return_ok(
         (
             lambda: tools.search_content("cql", limit=10),
             "search_content",
-            call("cql", limit=10),
+            call("cql", start=0, limit=10),
         ),
         (
             lambda: tools.get_page_children("p1", limit=10),
@@ -402,7 +402,7 @@ def test_write_tools_return_ok(
         (
             lambda: tools.search_users("cql", limit=10),
             "search_users",
-            call("cql", limit=10),
+            call("cql", start=0, limit=10),
         ),
         (
             lambda: tools.get_labels("p1"),
