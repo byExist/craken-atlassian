@@ -223,6 +223,21 @@ def get_space(space_id: str) -> Space:
     return Space.model_validate(resp.json())
 
 
+def resolve_space_id(space: str) -> str:
+    """Return the numeric space id for a space id or key.
+
+    A numeric ``space`` is treated as an id and returned unchanged; otherwise it
+    is looked up as a key (e.g. ``DEV`` or ``~accountId``) via list_spaces.
+    """
+    if space.isdigit():
+        return space
+    result = list_spaces(keys=[space], limit=1)
+    space_id = result.results[0].id if result.results else None
+    if space_id is None:
+        raise ValueError(f"no Confluence space found with key {space!r}")
+    return space_id
+
+
 def list_pages(
     space_id: str,
     *,

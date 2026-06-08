@@ -25,6 +25,7 @@ from atlassian.confluence.schema.page import (
     Page,
     Version,
 )
+from atlassian.confluence.schema.space import MultiEntityResultSpace, Space
 from atlassian.confluence.schema.task import MultiEntityResultTask, Task
 
 
@@ -37,17 +38,50 @@ def test_list_pages_strips_bodies(mocker: MockerFixture):
     page = MultiEntityResultPage(results=[Page(id="p1", body={"type": "doc"})])
     list_pages = mocker.patch.object(client, "list_pages", return_value=page)
 
-    out = tools.list_pages("space-1", title="x")
+    out = tools.list_pages("1", title="x")
 
-    assert list_pages.call_args == call("space-1", title="x", limit=25)
+    assert list_pages.call_args == call("1", title="x", limit=25)
     assert out.results[0].body is None
+
+
+def test_get_space_by_id_fetches_directly(mocker: MockerFixture):
+    get_space = mocker.patch.object(client, "get_space", return_value=Space(id="99"))
+    list_spaces = mocker.patch.object(client, "list_spaces")
+
+    assert tools.get_space("99").id == "99"
+    get_space.assert_called_once_with("99")
+    list_spaces.assert_not_called()
+
+
+def test_get_space_by_key_resolves_via_list_spaces(mocker: MockerFixture):
+    list_spaces = mocker.patch.object(
+        client,
+        "list_spaces",
+        return_value=MultiEntityResultSpace(results=[Space(id="99", key="DEV")]),
+    )
+    get_space = mocker.patch.object(client, "get_space")
+
+    out = tools.get_space("DEV")
+
+    assert out.id == "99"
+    list_spaces.assert_called_once_with(keys=["DEV"], limit=1)
+    get_space.assert_not_called()
+
+
+def test_get_space_by_key_raises_when_missing(mocker: MockerFixture):
+    mocker.patch.object(
+        client, "list_spaces", return_value=MultiEntityResultSpace(results=[])
+    )
+
+    with pytest.raises(ValueError, match="no Confluence space"):
+        tools.get_space("NOPE")
 
 
 def test_list_blog_posts_strips_bodies(mocker: MockerFixture):
     posts = MultiEntityResultBlogPost(results=[BlogPost(id="b1", body={"type": "doc"})])
     mocker.patch.object(client, "list_blog_posts", return_value=posts)
 
-    out = tools.list_blog_posts(space_id="space-1")
+    out = tools.list_blog_posts(space="1")
 
     assert out.results[0].body is None
 
@@ -143,18 +177,18 @@ def test_create_page_converts_and_returns_id(mocker: MockerFixture):
     create = mocker.patch.object(client, "create_page", return_value=Page(id="p1"))
     mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
 
-    assert tools.create_page("space-1", "T", content="# Hi") == "p1"
-    assert create.call_args == call("space-1", "T", body={"adf": 1}, parent_id=None)
+    assert tools.create_page("1", "T", content="# Hi") == "p1"
+    assert create.call_args == call("1", "T", body={"adf": 1}, parent_id=None)
 
 
 def test_create_page_passes_none_without_content(mocker: MockerFixture):
     create = mocker.patch.object(client, "create_page")
     to_adf = mocker.patch.object(tools, "to_adf")
 
-    tools.create_page("space-1", "T")
+    tools.create_page("1", "T")
 
     to_adf.assert_not_called()
-    assert create.call_args == call("space-1", "T", body=None, parent_id=None)
+    assert create.call_args == call("1", "T", body=None, parent_id=None)
 
 
 def test_create_page_reads_from_file(mocker: MockerFixture, tmp_path: Path):
@@ -163,14 +197,14 @@ def test_create_page_reads_from_file(mocker: MockerFixture, tmp_path: Path):
     mocker.patch.object(client, "create_page")
     to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
 
-    tools.create_page("space-1", "T", from_file=str(f))
+    tools.create_page("1", "T", from_file=str(f))
 
     assert to_adf.call_args == call("on disk")
 
 
 def test_create_page_rejects_content_and_from_file():
     with pytest.raises(ValueError, match="not both"):
-        tools.create_page("space-1", "T", content="x", from_file="/tmp/y.md")
+        tools.create_page("1", "T", content="x", from_file="/tmp/y.md")
 
 
 # ---------------------------------------------------------------------------
@@ -333,7 +367,6 @@ def test_write_tools_return_ok(
     ("invoke", "client_attr", "expected"),
     [
         (lambda: tools.get_current_user(), "get_current_user", call()),
-        (lambda: tools.get_space("s1"), "get_space", call("s1")),
         (
             lambda: tools.list_spaces(limit=10),
             "list_spaces",
@@ -451,13 +484,13 @@ def test_create_blog_post_converts_and_returns_id(mocker: MockerFixture):
     )
     mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
 
-    assert tools.create_blog_post("space-1", "T", content="# Hi") == "b1"
-    assert create.call_args == call("space-1", "T", body={"adf": 1})
+    assert tools.create_blog_post("1", "T", content="# Hi") == "b1"
+    assert create.call_args == call("1", "T", body={"adf": 1})
 
 
 def test_create_blog_post_rejects_content_and_from_file():
     with pytest.raises(ValueError, match="not both"):
-        tools.create_blog_post("space-1", "T", content="x", from_file="/tmp/y.md")
+        tools.create_blog_post("1", "T", content="x", from_file="/tmp/y.md")
 
 
 def test_create_blog_post_reads_from_file(mocker: MockerFixture, tmp_path: Path):
@@ -466,7 +499,7 @@ def test_create_blog_post_reads_from_file(mocker: MockerFixture, tmp_path: Path)
     mocker.patch.object(client, "create_blog_post", return_value=BlogPost(id="b1"))
     to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
 
-    assert tools.create_blog_post("space-1", "T", from_file=str(f)) == "b1"
+    assert tools.create_blog_post("1", "T", from_file=str(f)) == "b1"
     assert to_adf.call_args == call("disk body")
 
 

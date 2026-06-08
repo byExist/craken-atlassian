@@ -150,6 +150,26 @@ def test_get_space_fetches_by_id(confluence_api: MockServer):
     assert space.id == "99"
 
 
+def test_resolve_space_id_returns_numeric_unchanged():
+    assert client.resolve_space_id("123") == "123"
+
+
+def test_resolve_space_id_looks_up_key(confluence_api: MockServer):
+    confluence_api.add(
+        "GET", "/wiki/api/v2/spaces", json={"results": [{"id": "99", "key": "DEV"}]}
+    )
+
+    assert client.resolve_space_id("DEV") == "99"
+    assert confluence_api.last.url.params["keys"] == "DEV"
+
+
+def test_resolve_space_id_raises_when_key_missing(confluence_api: MockServer):
+    confluence_api.add("GET", "/wiki/api/v2/spaces", json={"results": []})
+
+    with pytest.raises(ValueError, match="no Confluence space"):
+        client.resolve_space_id("NOPE")
+
+
 def test_list_pages_parses_adf_and_cursor(confluence_api: MockServer):
     confluence_api.add(
         "GET",

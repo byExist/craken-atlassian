@@ -28,7 +28,9 @@ from atlassian.files import read_body, read_bytes, write_body, write_temp
 # Common parameter annotations — kept here so per-tool signatures stay terse and
 # the descriptions are not repeated across tools.
 PageId: TypeAlias = Annotated[str, Field(description="Page id.")]
-SpaceId: TypeAlias = Annotated[str, Field(description="Space id.")]
+SpaceKeyOrId: TypeAlias = Annotated[
+    str, Field(description="Space key (e.g. DEV, ~accountId) or numeric id.")
+]
 CommentId: TypeAlias = Annotated[str, Field(description="Comment id.")]
 Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
 Cursor: TypeAlias = Annotated[
@@ -85,9 +87,14 @@ def list_spaces(
     )
 
 
-def get_space(space_id: SpaceId) -> Space:
-    """Get a space's details."""
-    return client.get_space(space_id)
+def get_space(space: SpaceKeyOrId) -> Space:
+    """Get a space's details. Accepts a space key or numeric id."""
+    if space.isdigit():
+        return client.get_space(space)
+    result = client.list_spaces(keys=[space], limit=1)
+    if not result.results:
+        raise ValueError(f"no Confluence space found with key {space!r}")
+    return result.results[0]
 
 
 # --- Page ---
@@ -102,12 +109,12 @@ def search_content(
 
 
 def list_pages(
-    space_id: SpaceId,
+    space: SpaceKeyOrId,
     title: Annotated[str | None, Field(description="Filter by exact title.")] = None,
     limit: Limit = 25,
 ) -> MultiEntityResultPage:
     """List pages in a space. Body is omitted; use get_page for full content."""
-    result = client.list_pages(space_id, title=title, limit=limit)
+    result = client.list_pages(client.resolve_space_id(space), title=title, limit=limit)
     for page in result.results:
         page.body = None
     return result
@@ -195,7 +202,7 @@ def search_users(
 
 
 def create_page(
-    space_id: SpaceId,
+    space: SpaceKeyOrId,
     title: Annotated[str, Field(description="Page title.")],
     content: Annotated[str | None, Field(description="Markdown.")] = None,
     parent_id: Annotated[str | None, Field(description="Parent page id.")] = None,
@@ -210,7 +217,7 @@ def create_page(
         content = read_body(from_file)
     adf = to_adf(content) if content else None
     page = client.create_page(
-        space_id,
+        client.resolve_space_id(space),
         title,
         body=adf,
         parent_id=parent_id,
@@ -260,10 +267,13 @@ def update_page(
 
 
 def list_blog_posts(
-    space_id: Annotated[str | None, Field(description="Filter by space id.")] = None,
+    space: Annotated[
+        str | None, Field(description="Filter by space key or numeric id.")
+    ] = None,
     limit: Limit = 25,
 ) -> MultiEntityResultBlogPost:
     """List blog posts. Body is omitted; use get_blog_post for full content."""
+    space_id = client.resolve_space_id(space) if space is not None else None
     result = client.list_blog_posts(space_id=space_id, limit=limit)
     for post in result.results:
         post.body = None
@@ -292,7 +302,7 @@ def get_blog_post(
 
 
 def create_blog_post(
-    space_id: SpaceId,
+    space: SpaceKeyOrId,
     title: Annotated[str, Field(description="Blog post title.")],
     content: Annotated[str | None, Field(description="Markdown.")] = None,
     from_file: Annotated[
@@ -305,7 +315,7 @@ def create_blog_post(
     if from_file is not None:
         content = read_body(from_file)
     post = client.create_blog_post(
-        space_id,
+        client.resolve_space_id(space),
         title,
         body=to_adf(content) if content else None,
     )
