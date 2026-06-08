@@ -2,11 +2,10 @@
 
 ``client`` and the ``to_md``/``to_adf`` seams are patched with ``mocker`` so the
 tool's own logic is exercised: body stripping on lists, Markdown<->ADF
-conversion, optimistic-lock version handling on updates, base64 attachment
-decoding, and "OK" returns.
+conversion, optimistic-lock version handling on updates, attachment file
+reads, and "OK" returns.
 """
 
-import base64
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock, call
@@ -261,11 +260,12 @@ def test_edit_comment_bumps_fetched_version(mocker: MockerFixture):
 # ---------------------------------------------------------------------------
 
 
-def test_upload_attachment_decodes_base64(mocker: MockerFixture):
+def test_upload_attachment_reads_file(mocker: MockerFixture, tmp_path: Path):
+    f = tmp_path / "f.bin"
+    f.write_bytes(b"file-bytes")
     upload = mocker.patch.object(client, "upload_attachment")
-    encoded = base64.b64encode(b"file-bytes").decode()
 
-    assert tools.upload_attachment("p1", "f.bin", encoded, comment="c") == "OK"
+    assert tools.upload_attachment("p1", str(f), comment="c") == "OK"
     assert upload.call_args == call(
         "p1", filename="f.bin", data=b"file-bytes", comment="c"
     )

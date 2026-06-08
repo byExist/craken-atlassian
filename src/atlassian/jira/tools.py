@@ -156,7 +156,9 @@ def create_issue(
         str, Field(description="Issue type name, e.g. Task, Bug, Story.")
     ] = "Task",
     description: Annotated[str | None, Field(description="Markdown.")] = None,
-    assignee: Annotated[str | None, Field(description="Assignee accountId.")] = None,
+    assignee: Annotated[
+        str | None, Field(description="Assignee accountId (from search_users).")
+    ] = None,
     from_file: Annotated[
         str | None,
         Field(description="Absolute path to read the description from."),
@@ -468,7 +470,7 @@ def search_fields(
     start_at: Offset = 0,
     limit: Limit = 50,
 ) -> PageBeanField:
-    """Search fields (system and custom). Useful for finding field IDs for JQL."""
+    """Search fields (system and custom). Useful for finding field ids for JQL."""
     return client.search_fields(query=query, start_at=start_at, max_results=limit)
 
 

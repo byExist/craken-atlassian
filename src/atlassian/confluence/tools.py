@@ -1,6 +1,5 @@
 """Confluence MCP tools — pure functions, registered by server.py."""
 
-import base64
 from typing import Annotated, Literal, TypeAlias
 
 from marklas import to_adf, to_md
@@ -24,7 +23,7 @@ from atlassian.confluence.schema.space import MultiEntityResultSpace, Space
 from atlassian.confluence.schema.task import MultiEntityResultTask
 from atlassian.confluence.schema.user import User
 from atlassian.confluence.schema.version import MultiEntityResultPageVersion
-from atlassian.files import read_body, write_body, write_temp
+from atlassian.files import read_body, read_bytes, write_body, write_temp
 
 # Common parameter annotations — kept here so per-tool signatures stay terse and
 # the descriptions are not repeated across tools.
@@ -49,7 +48,6 @@ def get_current_user() -> User:
 
 
 def list_spaces(
-    limit: Limit = 25,
     space_type: Annotated[
         Literal[
             "global",
@@ -67,6 +65,7 @@ def list_spaces(
         Literal["current", "archived"] | None,
         Field(description="Filter by status."),
     ] = None,
+    limit: Limit = 25,
 ) -> MultiEntityResultSpace:
     """List spaces."""
     return client.list_spaces(
@@ -502,13 +501,12 @@ def remove_label(
 
 def upload_attachment(
     page_id: PageId,
-    filename: Annotated[str, Field(description="File name.")],
-    data_base64: Annotated[str, Field(description="Base64-encoded file data.")],
+    file_path: Annotated[str, Field(description="Absolute path to the file.")],
     comment: Annotated[str | None, Field(description="Optional comment.")] = None,
 ) -> str:
-    """Upload an attachment to a page."""
-    raw = base64.b64decode(data_base64)
-    client.upload_attachment(page_id, filename=filename, data=raw, comment=comment)
+    """Attach a local file to a page."""
+    data, filename = read_bytes(file_path)
+    client.upload_attachment(page_id, filename=filename, data=data, comment=comment)
     return "OK"
 
 
