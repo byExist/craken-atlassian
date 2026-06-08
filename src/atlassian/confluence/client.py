@@ -194,12 +194,15 @@ def get_attachment_content(page_id: str, attachment_id: str) -> tuple[bytes, str
 
 def list_spaces(
     *,
+    keys: list[str] | None = None,
     space_type: str | None = None,
     status: str | None = None,
     cursor: str | None = None,
     limit: int = 25,
 ) -> MultiEntityResultSpace:
     params: dict[str, str | int] = {"limit": limit}
+    if keys is not None:
+        params["keys"] = ",".join(keys)
     if space_type is not None:
         params["type"] = space_type
     if status is not None:

@@ -117,9 +117,12 @@ def test_list_spaces_extracts_cursor_and_maps_filters(confluence_api: MockServer
         json={"results": [{"id": "1", "key": "DEV"}], **_next_link("CUR42")},
     )
 
-    result = client.list_spaces(space_type="global", status="current")
+    result = client.list_spaces(
+        keys=["DEV", "~a"], space_type="global", status="current"
+    )
 
     req = confluence_api.last
+    assert req.url.params["keys"] == "DEV,~a"
     assert req.url.params["type"] == "global"
     assert req.url.params["status"] == "current"
     assert isinstance(result, MultiEntityResultSpace)
@@ -132,6 +135,7 @@ def test_list_spaces_omits_absent_filters(confluence_api: MockServer):
 
     result = client.list_spaces()
 
+    assert "keys" not in confluence_api.last.url.params
     assert "type" not in confluence_api.last.url.params
     assert "status" not in confluence_api.last.url.params
     assert result.cursor is None

@@ -337,7 +337,7 @@ def test_write_tools_return_ok(
         (
             lambda: tools.list_spaces(limit=10),
             "list_spaces",
-            call(space_type=None, status=None, limit=10),
+            call(keys=None, space_type=None, status=None, cursor=None, limit=10),
         ),
         (
             lambda: tools.search_content("cql", limit=10),

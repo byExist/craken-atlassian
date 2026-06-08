@@ -31,6 +31,9 @@ PageId: TypeAlias = Annotated[str, Field(description="Page id.")]
 SpaceId: TypeAlias = Annotated[str, Field(description="Space id.")]
 CommentId: TypeAlias = Annotated[str, Field(description="Comment id.")]
 Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
+Cursor: TypeAlias = Annotated[
+    str | None, Field(description="Pagination cursor from a prior result.")
+]
 Plain: TypeAlias = Annotated[
     bool, Field(description="Set false to keep ADF-only features for editing.")
 ]
@@ -48,6 +51,10 @@ def get_current_user() -> User:
 
 
 def list_spaces(
+    keys: Annotated[
+        list[str] | None,
+        Field(description="Filter by space keys, e.g. ['DEV', '~accountId']."),
+    ] = None,
     space_type: Annotated[
         Literal[
             "global",
@@ -65,12 +72,15 @@ def list_spaces(
         Literal["current", "archived"] | None,
         Field(description="Filter by status."),
     ] = None,
+    cursor: Cursor = None,
     limit: Limit = 25,
 ) -> MultiEntityResultSpace:
     """List spaces."""
     return client.list_spaces(
+        keys=keys,
         space_type=space_type,
         status=status,
+        cursor=cursor,
         limit=limit,
     )
 
