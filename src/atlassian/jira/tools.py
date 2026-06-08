@@ -34,16 +34,23 @@ from atlassian.files import read_body, read_bytes, write_body, write_temp
 
 # Common parameter annotations — kept here so per-tool signatures stay terse and
 # the descriptions are not repeated across tools.
-IssueKey: TypeAlias = Annotated[str, Field(description="Issue key, e.g. PROJ-123.")]
+# Identifiers
 ProjectKey: TypeAlias = Annotated[str, Field(description="Project key, e.g. PROJ.")]
-Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
-Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based).")]
-Plain: TypeAlias = Annotated[
-    bool, Field(description="Set false to keep ADF-only features for editing.")
-]
+IssueKey: TypeAlias = Annotated[str, Field(description="Issue key, e.g. PROJ-123.")]
 AccountId: TypeAlias = Annotated[
     str, Field(description="User accountId (from search_users).")
 ]
+
+# Pagination
+Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
+Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based).")]
+
+# Output
+Plain: TypeAlias = Annotated[
+    bool, Field(description="Set false to keep ADF-only features for editing.")
+]
+
+# Reused field descriptions
 _TIME_SPENT = 'Time spent, e.g. "3h 20m" (#d/#h/#m).'
 _STARTED = "Start time, ISO8601, e.g. 2021-01-17T12:34:00.000+0000."
 _VERSION_DATE = "Date, YYYY-MM-DD."

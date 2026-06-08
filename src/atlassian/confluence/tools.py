@@ -27,16 +27,21 @@ from atlassian.files import read_body, read_bytes, write_body, write_temp
 
 # Common parameter annotations — kept here so per-tool signatures stay terse and
 # the descriptions are not repeated across tools.
-PageId: TypeAlias = Annotated[str, Field(description="Page id.")]
+# Identifiers
 SpaceKeyOrId: TypeAlias = Annotated[
     str, Field(description="Space key (e.g. DEV, ~accountId) or numeric id.")
 ]
+PageId: TypeAlias = Annotated[str, Field(description="Page id.")]
 CommentId: TypeAlias = Annotated[str, Field(description="Comment id.")]
+
+# Pagination
 Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
 Cursor: TypeAlias = Annotated[
     str | None, Field(description="Pagination cursor from a prior result.")
 ]
 Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based).")]
+
+# Output
 Plain: TypeAlias = Annotated[
     bool, Field(description="Set false to keep ADF-only features for editing.")
 ]
