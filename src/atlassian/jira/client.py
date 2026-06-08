@@ -298,11 +298,12 @@ def get_my_permissions(
 def search_users(
     query: str,
     *,
+    start_at: int = 0,
     max_results: int = 50,
 ) -> list[User]:
     resp = _get_client().get(
         "/rest/api/3/user/search",
-        params={"query": query, "maxResults": max_results},
+        params={"query": query, "startAt": start_at, "maxResults": max_results},
     )
     resp.raise_for_status()
     return [User.model_validate(item) for item in resp.json()]

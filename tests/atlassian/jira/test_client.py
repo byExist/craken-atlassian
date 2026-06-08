@@ -201,10 +201,11 @@ def test_search_fields_includes_query_when_given(jira_api: MockServer):
 def test_search_users_passes_query(jira_api: MockServer):
     jira_api.add("GET", "/rest/api/3/user/search", json=[{"accountId": "u1"}])
 
-    users = client.search_users("alice", max_results=10)
+    users = client.search_users("alice", start_at=15, max_results=10)
 
     req = jira_api.last
     assert req.url.params["query"] == "alice"
+    assert req.url.params["startAt"] == "15"
     assert req.url.params["maxResults"] == "10"
     assert users[0].account_id == "u1"
 

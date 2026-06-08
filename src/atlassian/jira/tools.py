@@ -60,10 +60,11 @@ def get_current_user() -> User:
 
 def search_users(
     query: Annotated[str, Field(description="Name or email to match.")],
+    start_at: Offset = 0,
     limit: Limit = 50,
 ) -> list[User]:
     """Search for users."""
-    return client.search_users(query, max_results=limit)
+    return client.search_users(query, start_at=start_at, max_results=limit)
 
 
 # --- Project ---

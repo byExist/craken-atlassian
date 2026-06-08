@@ -56,7 +56,7 @@ def test_search_users_maps_limit_to_max_results(mocker: MockerFixture):
     result = tools.search_users("alice", limit=10)
 
     assert result is sentinel
-    assert search.call_args == call("alice", max_results=10)
+    assert search.call_args == call("alice", start_at=0, max_results=10)
 
 
 def test_get_project_delegates(mocker: MockerFixture):
