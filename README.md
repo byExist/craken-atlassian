@@ -35,15 +35,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS / Linux — see the uv
 /plugin install atlassian@craken
 ```
 
-Credentials are prompted on enable, or set anytime with `/plugin config atlassian` — the token is stored in your OS keychain:
+**Installed disabled** — it connects to your account, so you opt in by enabling it (`/plugin` menu, or `claude plugin enable atlassian`), which prompts for the settings below. The token is stored in your OS keychain, not `settings.json`; reconfigure anytime with `/plugin config atlassian`.
 
 | Setting | Description |
 | --- | --- |
 | Atlassian site URL | e.g. `https://your-company.atlassian.net` |
 | Atlassian account email | Account that owns the API token |
 | Atlassian API token | Create one at [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens) |
-
-**Read-only by default.** Write tools (create / update / delete) appear only after you turn on *Enable write operations* via `/plugin config atlassian` — and even then, actions your account lacks permission for are marked **NOT PERMITTED**.
+| Enable write operations | Off by default — read-only. On exposes create / update / delete; actions your account can't perform are still marked **NOT PERMITTED**. |
 
 > **Cloud only.** Built on Jira REST v3 (ADF) and Confluence v2 (`atlas_doc_format`); Server / Data Center isn't supported.
 

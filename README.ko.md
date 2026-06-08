@@ -35,15 +35,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS / Linux — Windows는
 /plugin install atlassian@craken
 ```
 
-자격 증명은 활성화 시 프롬프트로 묻거나 `/plugin config atlassian`에서 설정합니다 — 토큰은 OS 키체인에 저장됩니다:
+**비활성화 상태로 설치됩니다** — 계정에 연결되므로 직접 활성화해야 켜집니다(`/plugin` 메뉴 또는 `claude plugin enable atlassian`). 활성화 시 아래 설정을 입력받으며, 토큰은 `settings.json`이 아닌 OS 키체인에 저장됩니다. 이후 변경은 `/plugin config atlassian`에서.
 
 | 설정 | 설명 |
 | --- | --- |
 | Atlassian site URL | 예: `https://your-company.atlassian.net` |
 | Atlassian account email | API 토큰을 소유한 계정 이메일 |
 | Atlassian API token | [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens)에서 발급 |
-
-**기본은 read-only.** 쓰기 도구(생성·수정·삭제)는 `/plugin config atlassian`에서 *Enable write operations*를 켜야 나타나며, 켜더라도 계정에 권한이 없는 작업은 **NOT PERMITTED**로 표시됩니다.
+| Enable write operations | 기본 꺼짐 — read-only. 켜면 생성·수정·삭제 도구가 노출되며, 계정에 권한이 없는 작업은 **NOT PERMITTED**로 표시됩니다. |
 
 > **Cloud 전용.** Jira REST v3(ADF)·Confluence v2(`atlas_doc_format`) 기반이라 Server / Data Center는 지원하지 않습니다.
 
