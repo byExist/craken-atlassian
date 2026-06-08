@@ -41,17 +41,24 @@ def _next_link(cursor: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def test_get_current_user_uses_v1_path(confluence_api: MockServer):
+def test_get_current_user_expands_personal_space(confluence_api: MockServer):
     confluence_api.add(
         "GET",
         "/wiki/rest/api/user/current",
-        json={"accountId": "a", "displayName": "D"},
+        json={
+            "accountId": "a",
+            "displayName": "D",
+            "personalSpace": {"key": "~a", "name": "P"},
+        },
     )
 
     user = client.get_current_user()
 
+    assert confluence_api.last.url.params["expand"] == "personalSpace"
     assert isinstance(user, User)
     assert user.account_id == "a"
+    assert user.personal_space is not None
+    assert user.personal_space.key == "~a"
 
 
 def test_search_content_passes_cql_and_limit(confluence_api: MockServer):

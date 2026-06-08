@@ -135,7 +135,10 @@ def _parse_blog_post(data: dict[str, Any]) -> BlogPost:
 
 
 def get_current_user() -> User:
-    resp = _get_client().get("/wiki/rest/api/user/current")
+    resp = _get_client().get(
+        "/wiki/rest/api/user/current",
+        params={"expand": "personalSpace"},
+    )
     resp.raise_for_status()
     return User.model_validate(resp.json())
 
