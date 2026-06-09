@@ -435,6 +435,7 @@ def create_issue(
     issue_type: str = "Task",
     description: ADF | None = None,
     assignee: str | None = None,
+    parent_key: str | None = None,
 ) -> CreatedIssue:
     fields: dict[str, Any] = {
         "project": {"key": project_key},
@@ -445,6 +446,8 @@ def create_issue(
         fields["description"] = description
     if assignee is not None:
         fields["assignee"] = {"accountId": assignee}
+    if parent_key is not None:
+        fields["parent"] = {"key": parent_key}
     resp = _get_client().post("/rest/api/3/issue", json={"fields": fields})
     resp.raise_for_status()
     return CreatedIssue.model_validate(resp.json())
@@ -455,12 +458,15 @@ def update_issue(
     *,
     summary: str | None = None,
     description: ADF | None = None,
+    parent_key: str | None = None,
 ) -> None:
     fields: dict[str, Any] = {}
     if summary is not None:
         fields["summary"] = summary
     if description is not None:
         fields["description"] = description
+    if parent_key is not None:
+        fields["parent"] = {"key": parent_key}
     resp = _get_client().put(
         f"/rest/api/3/issue/{issue_key}",
         json={"fields": fields},

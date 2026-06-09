@@ -40,6 +40,15 @@ IssueKey: TypeAlias = Annotated[str, Field(description="Issue key, e.g. PROJ-123
 AccountId: TypeAlias = Annotated[
     str, Field(description="User accountId (from search_users).")
 ]
+ParentKey: TypeAlias = Annotated[
+    str | None,
+    Field(
+        description=(
+            "Parent issue key: a sub-task's parent, or an Epic in team-managed "
+            "projects. For Epics in company-managed projects, use link_to_epic."
+        )
+    ),
+]
 
 # Pagination
 Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
@@ -167,6 +176,7 @@ def create_issue(
     assignee: Annotated[
         str | None, Field(description="Assignee accountId (from search_users).")
     ] = None,
+    parent: ParentKey = None,
     from_file: Annotated[
         str | None,
         Field(description="Absolute path to read the description from."),
@@ -183,6 +193,7 @@ def create_issue(
         issue_type=issue_type,
         description=to_adf(description) if description else None,
         assignee=assignee,
+        parent_key=parent,
     )
     return str(issue.key)
 
@@ -191,6 +202,7 @@ def update_issue(
     issue_key: IssueKey,
     summary: Annotated[str | None, Field(description="New summary.")] = None,
     description: Annotated[str | None, Field(description="Markdown.")] = None,
+    parent: ParentKey = None,
     from_file: Annotated[
         str | None,
         Field(description="Absolute path to read the description from."),
@@ -205,6 +217,7 @@ def update_issue(
         issue_key,
         summary=summary,
         description=to_adf(description) if description else None,
+        parent_key=parent,
     )
     return "OK"
 

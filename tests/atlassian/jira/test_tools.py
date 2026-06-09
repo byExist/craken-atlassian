@@ -200,7 +200,12 @@ def test_create_issue_converts_markdown_to_adf(mocker: MockerFixture):
 
     assert to_adf.call_args == call("# Hi")
     assert create.call_args == call(
-        "ABC", "Title", issue_type="Task", description={"adf": True}, assignee=None
+        "ABC",
+        "Title",
+        issue_type="Task",
+        description={"adf": True},
+        assignee=None,
+        parent_key=None,
     )
     assert out == "A-9"
 
@@ -213,7 +218,12 @@ def test_create_issue_passes_none_when_no_description(mocker: MockerFixture):
 
     to_adf.assert_not_called()
     assert create.call_args == call(
-        "ABC", "Title", issue_type="Task", description=None, assignee=None
+        "ABC",
+        "Title",
+        issue_type="Task",
+        description=None,
+        assignee=None,
+        parent_key=None,
     )
 
 
@@ -233,17 +243,45 @@ def test_create_issue_rejects_description_and_from_file_together():
         tools.create_issue("ABC", "Title", description="x", from_file="/tmp/y.md")
 
 
+def test_create_issue_passes_parent(mocker: MockerFixture):
+    create = mocker.patch.object(
+        client, "create_issue", return_value=CreatedIssue(key="A-9")
+    )
+
+    tools.create_issue("ABC", "Title", parent="ABC-1")
+
+    assert create.call_args == call(
+        "ABC",
+        "Title",
+        issue_type="Task",
+        description=None,
+        assignee=None,
+        parent_key="ABC-1",
+    )
+
+
 def test_update_issue_converts_and_returns_ok(mocker: MockerFixture):
     update = mocker.patch.object(client, "update_issue")
     mocker.patch.object(tools, "to_adf", return_value={"adf": True})
 
     assert tools.update_issue("A-1", summary="S", description="# d") == "OK"
-    assert update.call_args == call("A-1", summary="S", description={"adf": True})
+    assert update.call_args == call(
+        "A-1", summary="S", description={"adf": True}, parent_key=None
+    )
 
 
 def test_update_issue_rejects_description_and_from_file_together():
     with pytest.raises(ValueError, match="not both"):
         tools.update_issue("A-1", description="x", from_file="/tmp/y.md")
+
+
+def test_update_issue_passes_parent(mocker: MockerFixture):
+    update = mocker.patch.object(client, "update_issue")
+
+    assert tools.update_issue("A-1", parent="A-2") == "OK"
+    assert update.call_args == call(
+        "A-1", summary=None, description=None, parent_key="A-2"
+    )
 
 
 def test_add_comment_converts_and_returns_ok(mocker: MockerFixture):
@@ -590,4 +628,6 @@ def test_update_issue_reads_from_file(mocker: MockerFixture, tmp_path: Path):
 
     assert tools.update_issue("A-1", from_file=str(body_file)) == "OK"
     assert to_adf.call_args == call("disk body")
-    assert update.call_args == call("A-1", summary=None, description={"adf": 1})
+    assert update.call_args == call(
+        "A-1", summary=None, description={"adf": 1}, parent_key=None
+    )
