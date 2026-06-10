@@ -65,14 +65,14 @@ def globally_unavailable() -> set[str]:
 
 
 def describe(fn: Callable[..., Any], unavailable: set[str]) -> str:
-    """Return fn's docstring, with a NOT PERMITTED note appended when the
+    """Return fn's docstring, with a not-permitted note appended when the
     permission it requires is globally unavailable."""
     doc = (fn.__doc__ or "").rstrip()
     perm = _TOOL_PERMISSION.get(fn.__name__)
     if perm and perm in unavailable:
         return (
             f"{doc}\n\n"
-            f"NOT PERMITTED: this account lacks the '{perm}' permission in every "
+            f"Not permitted: this account lacks the '{perm}' permission in every "
             f"project, so calling this will fail with 403. Do not call it; "
             f"suggest an alternative (e.g. a status transition) instead."
         )

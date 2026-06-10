@@ -78,7 +78,7 @@ def test_globally_unavailable_swallows_lookup_failure(mocker: MockerFixture):
 def test_describe_appends_note_when_permission_unavailable():
     doc = permissions.describe(jira_tools.create_issue, {"CREATE_ISSUES"})
 
-    assert "NOT PERMITTED" in doc
+    assert "Not permitted:" in doc
     assert "CREATE_ISSUES" in doc
     # Original docstring is preserved ahead of the note.
     assert doc.startswith((jira_tools.create_issue.__doc__ or "").rstrip())
@@ -87,7 +87,7 @@ def test_describe_appends_note_when_permission_unavailable():
 def test_describe_returns_plain_docstring_when_permission_available():
     doc = permissions.describe(jira_tools.create_issue, set())
 
-    assert "NOT PERMITTED" not in doc
+    assert "Not permitted:" not in doc
     assert doc == (jira_tools.create_issue.__doc__ or "").rstrip()
 
 
@@ -95,7 +95,7 @@ def test_describe_ignores_unmapped_tools():
     # get_issue has no entry in _TOOL_PERMISSION, so it never gets a note.
     doc = permissions.describe(jira_tools.get_issue, {"CREATE_ISSUES", "EDIT_ISSUES"})
 
-    assert "NOT PERMITTED" not in doc
+    assert "Not permitted:" not in doc
     assert doc == (jira_tools.get_issue.__doc__ or "").rstrip()
 
 
@@ -105,5 +105,5 @@ def test_describe_handles_missing_docstring():
 
     doc = permissions.describe(delete_issue, {"DELETE_ISSUES"})
 
-    assert "NOT PERMITTED" in doc
+    assert "Not permitted:" in doc
     assert "DELETE_ISSUES" in doc

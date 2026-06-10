@@ -84,7 +84,7 @@ def test_all_tools_are_namespaced(mocker: MockerFixture):
 def test_unavailable_permission_marks_matching_tool(mocker: MockerFixture):
     tools = _tool_map(mocker, write_enabled=True, unavailable={"CREATE_ISSUES"})
 
-    assert "NOT PERMITTED" in tools["jira_create_issue"]
+    assert "Not permitted:" in tools["jira_create_issue"]
     assert "CREATE_ISSUES" in tools["jira_create_issue"]
 
 
@@ -92,24 +92,24 @@ def test_one_permission_marks_all_tools_that_need_it(mocker: MockerFixture):
     # EDIT_ISSUES backs both update_issue and change_issue_type.
     tools = _tool_map(mocker, write_enabled=True, unavailable={"EDIT_ISSUES"})
 
-    assert "NOT PERMITTED" in tools["jira_update_issue"]
-    assert "NOT PERMITTED" in tools["jira_change_issue_type"]
+    assert "Not permitted:" in tools["jira_update_issue"]
+    assert "Not permitted:" in tools["jira_change_issue_type"]
     # A different permission is unaffected.
-    assert "NOT PERMITTED" not in tools["jira_create_issue"]
+    assert "Not permitted:" not in tools["jira_create_issue"]
 
 
 def test_unmapped_write_tool_is_never_marked(mocker: MockerFixture):
     # delete_comment has no _TOOL_PERMISSION entry -> always falls back to 403.
     tools = _tool_map(mocker, write_enabled=True, unavailable={"CREATE_ISSUES"})
 
-    assert "NOT PERMITTED" not in tools["jira_delete_comment"]
+    assert "Not permitted:" not in tools["jira_delete_comment"]
 
 
 def test_no_marks_when_all_permissions_available(mocker: MockerFixture):
     tools = _tool_map(mocker, write_enabled=True, unavailable=set())
 
-    assert "NOT PERMITTED" not in tools["jira_create_issue"]
-    assert "NOT PERMITTED" not in tools["jira_update_issue"]
+    assert "Not permitted:" not in tools["jira_create_issue"]
+    assert "Not permitted:" not in tools["jira_update_issue"]
 
 
 def test_confluence_writes_are_never_gated(mocker: MockerFixture):
@@ -117,4 +117,4 @@ def test_confluence_writes_are_never_gated(mocker: MockerFixture):
     # write tools carry their plain docstrings.
     tools = _tool_map(mocker, write_enabled=True, unavailable={"CREATE_ISSUES"})
 
-    assert "NOT PERMITTED" not in tools["confluence_create_page"]
+    assert "Not permitted:" not in tools["confluence_create_page"]
