@@ -4,7 +4,7 @@
       "command": "uv",
       "args": ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}", "python", "-m", "atlassian"],
       "env": {
-        "ATLASSIAN_URL": "${user_config.atlassian_url}",
+        "ATLASSIAN_DOMAIN": "${user_config.atlassian_domain}",
         "ATLASSIAN_USER": "${user_config.atlassian_user}",
         "ATLASSIAN_TOKEN": "${user_config.atlassian_token}",
         "ATLASSIAN_WRITE_ENABLED": "${user_config.write_enabled}"

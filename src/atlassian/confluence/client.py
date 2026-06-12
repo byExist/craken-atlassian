@@ -10,7 +10,7 @@ Mixed API versions:
 
 Required environment variables
 ------------------------------
-ATLASSIAN_URL   - e.g. ``https://mycompany.atlassian.net``
+ATLASSIAN_DOMAIN - e.g. ``mycompany.atlassian.net``
 ATLASSIAN_USER  - e.g. ``user@company.com``
 ATLASSIAN_TOKEN - Atlassian API token
 """

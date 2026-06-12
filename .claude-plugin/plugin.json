@@ -4,10 +4,10 @@
   "repository": "https://github.com/byExist/craken-atlassian",
   "defaultEnabled": false,
   "userConfig": {
-    "atlassian_url": {
+    "atlassian_domain": {
       "type": "string",
-      "title": "Atlassian site URL",
-      "description": "Your Atlassian Cloud site, e.g. https://yourcompany.atlassian.net",
+      "title": "Atlassian domain",
+      "description": "Your Atlassian Cloud domain, e.g. yourcompany.atlassian.net",
       "required": true
     },
     "atlassian_user": {

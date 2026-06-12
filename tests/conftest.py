@@ -32,13 +32,13 @@ from support import MockServer
 _REAL_HTTPX_CLIENT = httpx.Client
 
 _FAKE_AUTH = Auth(
-    url="https://test.atlassian.net",
+    domain="test.atlassian.net",
     user="tester@example.com",
     token="dummy-token",  # type: ignore[arg-type]
 )
 
 _ATLASSIAN_ENV = (
-    "ATLASSIAN_URL",
+    "ATLASSIAN_DOMAIN",
     "ATLASSIAN_USER",
     "ATLASSIAN_TOKEN",
     "ATLASSIAN_WRITE_ENABLED",

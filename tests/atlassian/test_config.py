@@ -9,7 +9,7 @@ from pytest_mock import MockerFixture
 from atlassian.config import Auth, Config, get_auth
 
 _CREDS = {
-    "ATLASSIAN_URL": "https://acme.atlassian.net",
+    "ATLASSIAN_DOMAIN": "acme.atlassian.net",
     "ATLASSIAN_USER": "dev@acme.com",
     "ATLASSIAN_TOKEN": "s3cr3t",
 }
