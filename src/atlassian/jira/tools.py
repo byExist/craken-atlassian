@@ -1,6 +1,6 @@
 """JIRA MCP tools — pure functions, registered by server.py."""
 
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from marklas import to_adf, to_md
 from pydantic import Field
@@ -181,6 +181,16 @@ def create_issue(
         str | None,
         Field(description="Absolute path to read the description from."),
     ] = None,
+    due_date: Annotated[
+        str | None, Field(description="Due date as YYYY-MM-DD.")
+    ] = None,
+    priority: Annotated[
+        str | None, Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest.")
+    ] = None,
+    extra_fields: Annotated[
+        dict[str, Any] | None,
+        Field(description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."),
+    ] = None,
 ) -> str:
     """Create an issue; returns the issue key. Provide description inline or via from_file, not both."""
     if description and from_file:
@@ -194,6 +204,9 @@ def create_issue(
         description=to_adf(description) if description else None,
         assignee=assignee,
         parent_key=parent,
+        due_date=due_date,
+        priority=priority,
+        extra_fields=extra_fields,
     )
     return str(issue.key)
 
@@ -207,6 +220,19 @@ def update_issue(
         str | None,
         Field(description="Absolute path to read the description from."),
     ] = None,
+    assignee: Annotated[
+        str | None, Field(description="Assignee accountId (from search_users).")
+    ] = None,
+    due_date: Annotated[
+        str | None, Field(description="Due date as YYYY-MM-DD.")
+    ] = None,
+    priority: Annotated[
+        str | None, Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest.")
+    ] = None,
+    extra_fields: Annotated[
+        dict[str, Any] | None,
+        Field(description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."),
+    ] = None,
 ) -> str:
     """Update an issue. Provide description inline or via from_file, not both."""
     if description and from_file:
@@ -218,6 +244,10 @@ def update_issue(
         summary=summary,
         description=to_adf(description) if description else None,
         parent_key=parent,
+        assignee=assignee,
+        due_date=due_date,
+        priority=priority,
+        extra_fields=extra_fields,
     )
     return "OK"
 

@@ -436,18 +436,26 @@ def create_issue(
     description: ADF | None = None,
     assignee: str | None = None,
     parent_key: str | None = None,
+    due_date: str | None = None,
+    priority: str | None = None,
+    extra_fields: dict[str, Any] | None = None,
 ) -> CreatedIssue:
-    fields: dict[str, Any] = {
+    fields: dict[str, Any] = {**(extra_fields or {})}
+    fields.update({
         "project": {"key": project_key},
         "summary": summary,
         "issuetype": {"name": issue_type},
-    }
+    })
     if description is not None:
         fields["description"] = description
     if assignee is not None:
         fields["assignee"] = {"accountId": assignee}
     if parent_key is not None:
         fields["parent"] = {"key": parent_key}
+    if due_date is not None:
+        fields["duedate"] = due_date
+    if priority is not None:
+        fields["priority"] = {"name": priority}
     resp = _get_client().post("/rest/api/3/issue", json={"fields": fields})
     resp.raise_for_status()
     return CreatedIssue.model_validate(resp.json())
@@ -459,14 +467,24 @@ def update_issue(
     summary: str | None = None,
     description: ADF | None = None,
     parent_key: str | None = None,
+    assignee: str | None = None,
+    due_date: str | None = None,
+    priority: str | None = None,
+    extra_fields: dict[str, Any] | None = None,
 ) -> None:
-    fields: dict[str, Any] = {}
+    fields: dict[str, Any] = {**(extra_fields or {})}
     if summary is not None:
         fields["summary"] = summary
     if description is not None:
         fields["description"] = description
     if parent_key is not None:
         fields["parent"] = {"key": parent_key}
+    if assignee is not None:
+        fields["assignee"] = {"accountId": assignee}
+    if due_date is not None:
+        fields["duedate"] = due_date
+    if priority is not None:
+        fields["priority"] = {"name": priority}
     resp = _get_client().put(
         f"/rest/api/3/issue/{issue_key}",
         json={"fields": fields},
