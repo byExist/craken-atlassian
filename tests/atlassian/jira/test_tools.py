@@ -165,6 +165,15 @@ def test_get_issue_skips_conversion_without_adf(mocker: MockerFixture):
     assert out.fields.description is None
 
 
+def test_get_issue_passes_fields_to_client(mocker: MockerFixture):
+    issue = IssueBean(key="A-1", fields=JiraIssueFields())
+    get = mocker.patch.object(client, "get_issue", return_value=issue)
+
+    tools.get_issue("A-1", fields=["customfield_10004"])
+
+    assert get.call_args == call("A-1", fields=["customfield_10004"])
+
+
 def test_get_comments_converts_bodies(mocker: MockerFixture):
     page = PageOfComments(comments=[Comment(id="1", body={"type": "doc"})])
     mocker.patch.object(client, "get_comments", return_value=page)

@@ -151,9 +151,13 @@ def get_issue(
             "the response; edit, then publish with update_issue(from_file=...)."
         ),
     ] = None,
+    fields: Annotated[
+        list[str] | None,
+        Field(description="Extra field IDs to include, e.g. ['customfield_10004'] for story points. Use search_fields to find field IDs."),
+    ] = None,
 ) -> IssueBean:
     """Get an issue. Description is Markdown."""
-    issue = client.get_issue(issue_key)
+    issue = client.get_issue(issue_key, fields=fields)
     if issue.fields and isinstance(issue.fields.description, dict):
         issue.fields.description = to_md(issue.fields.description, plain=plain)
     if (

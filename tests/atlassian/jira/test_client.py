@@ -71,6 +71,32 @@ def test_get_issue_fetches_by_key(jira_api: MockServer):
     assert issue.fields.summary == "Hi"
 
 
+def test_get_issue_requests_default_fields_only(jira_api: MockServer):
+    jira_api.add("GET", "/rest/api/3/issue/ABC-1", json={"key": "ABC-1", "fields": {}})
+
+    client.get_issue("ABC-1")
+
+    req = jira_api.request("GET", "/rest/api/3/issue/ABC-1")
+    fields_param = req.url.params["fields"]
+    assert "customfield" not in fields_param
+    assert "summary" in fields_param
+
+
+def test_get_issue_appends_extra_fields(jira_api: MockServer):
+    jira_api.add(
+        "GET",
+        "/rest/api/3/issue/ABC-1",
+        json={"key": "ABC-1", "fields": {"summary": "Hi", "customfield_10004": 5}},
+    )
+
+    issue = client.get_issue("ABC-1", fields=["customfield_10004"])
+
+    req = jira_api.request("GET", "/rest/api/3/issue/ABC-1")
+    assert "customfield_10004" in req.url.params["fields"]
+    assert issue.fields is not None
+    assert issue.fields.model_extra == {"customfield_10004": 5}  # type: ignore[union-attr]
+
+
 def test_get_comments_passes_pagination_params(jira_api: MockServer):
     jira_api.add(
         "GET", "/rest/api/3/issue/ABC-1/comment", json={"comments": [], "total": 0}

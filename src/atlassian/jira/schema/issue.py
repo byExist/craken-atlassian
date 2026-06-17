@@ -1,6 +1,6 @@
 """Issue schema."""
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from atlassian.jira.schema.base import JiraModel
 from atlassian.jira.schema.adf import ADF
@@ -14,6 +14,8 @@ class JiraIssueFields(JiraModel):
 
     OpenAPI: IssueBean.fields (additionalProperties object — typed for common fields only)
     """
+
+    model_config = ConfigDict(extra="allow")
 
     summary: str | None = None
     description: ADF | str | None = None

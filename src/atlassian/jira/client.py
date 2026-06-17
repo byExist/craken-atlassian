@@ -91,8 +91,21 @@ def search_issues(
     return SearchAndReconcileResults.model_validate(resp.json())
 
 
-def get_issue(issue_key: str) -> IssueBean:
-    resp = _get_client().get(f"/rest/api/3/issue/{issue_key}")
+_DEFAULT_ISSUE_FIELDS = ",".join([
+    "summary", "description", "status", "assignee", "reporter",
+    "issuetype", "priority", "labels", "created", "updated",
+    "resolutiondate", "issuelinks",
+])
+
+
+def get_issue(issue_key: str, fields: list[str] | None = None) -> IssueBean:
+    field_param = _DEFAULT_ISSUE_FIELDS
+    if fields:
+        field_param = f"{_DEFAULT_ISSUE_FIELDS},{','.join(fields)}"
+    resp = _get_client().get(
+        f"/rest/api/3/issue/{issue_key}",
+        params={"fields": field_param},
+    )
     resp.raise_for_status()
     return IssueBean.model_validate(resp.json())
 
