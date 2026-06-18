@@ -153,7 +153,9 @@ def get_issue(
     ] = None,
     fields: Annotated[
         list[str] | None,
-        Field(description="Extra field IDs to include, e.g. ['customfield_10004'] for story points. Use search_fields to find field IDs."),
+        Field(
+            description="Extra field IDs to include, e.g. ['customfield_10004'] for story points. Use search_fields to find field IDs."
+        ),
     ] = None,
 ) -> IssueBean:
     """Get an issue. Description is Markdown."""
@@ -189,11 +191,14 @@ def create_issue(
         str | None, Field(description="Due date as YYYY-MM-DD.")
     ] = None,
     priority: Annotated[
-        str | None, Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest.")
+        str | None,
+        Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest."),
     ] = None,
     extra_fields: Annotated[
         dict[str, Any] | None,
-        Field(description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."),
+        Field(
+            description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."
+        ),
     ] = None,
 ) -> str:
     """Create an issue; returns the issue key. Provide description inline or via from_file, not both."""
@@ -231,11 +236,14 @@ def update_issue(
         str | None, Field(description="Due date as YYYY-MM-DD.")
     ] = None,
     priority: Annotated[
-        str | None, Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest.")
+        str | None,
+        Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest."),
     ] = None,
     extra_fields: Annotated[
         dict[str, Any] | None,
-        Field(description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."),
+        Field(
+            description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."
+        ),
     ] = None,
 ) -> str:
     """Update an issue. Provide description inline or via from_file, not both."""

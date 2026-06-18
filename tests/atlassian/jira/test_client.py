@@ -350,7 +350,9 @@ def test_create_issue_merges_extra_fields(jira_api: MockServer):
 def test_create_issue_named_field_overrides_extra_fields(jira_api: MockServer):
     jira_api.add("POST", "/rest/api/3/issue", json={"key": "ABC-9"})
 
-    client.create_issue("ABC", "T", priority="Low", extra_fields={"priority": {"name": "High"}})
+    client.create_issue(
+        "ABC", "T", priority="Low", extra_fields={"priority": {"name": "High"}}
+    )
 
     body = jira_api.body(jira_api.last)
     assert body["fields"]["priority"] == {"name": "Low"}
@@ -377,7 +379,9 @@ def test_update_issue_sets_parent(jira_api: MockServer):
 def test_update_issue_sets_standard_fields(jira_api: MockServer):
     jira_api.add("PUT", "/rest/api/3/issue/ABC-1", json={})
 
-    client.update_issue("ABC-1", due_date="2026-06-17", priority="High", assignee="acc-1")
+    client.update_issue(
+        "ABC-1", due_date="2026-06-17", priority="High", assignee="acc-1"
+    )
 
     body = jira_api.body(jira_api.last)
     assert body["fields"]["duedate"] == "2026-06-17"
@@ -398,7 +402,9 @@ def test_update_issue_merges_extra_fields(jira_api: MockServer):
 def test_update_issue_named_field_overrides_extra_fields(jira_api: MockServer):
     jira_api.add("PUT", "/rest/api/3/issue/ABC-1", json={})
 
-    client.update_issue("ABC-1", priority="Low", extra_fields={"priority": {"name": "High"}})
+    client.update_issue(
+        "ABC-1", priority="Low", extra_fields={"priority": {"name": "High"}}
+    )
 
     body = jira_api.body(jira_api.last)
     assert body["fields"]["priority"] == {"name": "Low"}

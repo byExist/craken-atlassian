@@ -91,11 +91,22 @@ def search_issues(
     return SearchAndReconcileResults.model_validate(resp.json())
 
 
-_DEFAULT_ISSUE_FIELDS = ",".join([
-    "summary", "description", "status", "assignee", "reporter",
-    "issuetype", "priority", "labels", "created", "updated",
-    "resolutiondate", "issuelinks",
-])
+_DEFAULT_ISSUE_FIELDS = ",".join(
+    [
+        "summary",
+        "description",
+        "status",
+        "assignee",
+        "reporter",
+        "issuetype",
+        "priority",
+        "labels",
+        "created",
+        "updated",
+        "resolutiondate",
+        "issuelinks",
+    ]
+)
 
 
 def get_issue(issue_key: str, fields: list[str] | None = None) -> IssueBean:
@@ -454,11 +465,13 @@ def create_issue(
     extra_fields: dict[str, Any] | None = None,
 ) -> CreatedIssue:
     fields: dict[str, Any] = {**(extra_fields or {})}
-    fields.update({
-        "project": {"key": project_key},
-        "summary": summary,
-        "issuetype": {"name": issue_type},
-    })
+    fields.update(
+        {
+            "project": {"key": project_key},
+            "summary": summary,
+            "issuetype": {"name": issue_type},
+        }
+    )
     if description is not None:
         fields["description"] = description
     if assignee is not None:

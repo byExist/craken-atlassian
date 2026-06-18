@@ -351,9 +351,17 @@ def test_update_issue_passes_extra_fields(mocker: MockerFixture):
 
 
 def test_create_issue_passes_standard_fields(mocker: MockerFixture):
-    create = mocker.patch.object(client, "create_issue", return_value=CreatedIssue(key="A-1"))
+    create = mocker.patch.object(
+        client, "create_issue", return_value=CreatedIssue(key="A-1")
+    )
 
-    tools.create_issue("ABC", "T", due_date="2026-06-17", priority="High", extra_fields={"customfield_10016": 3})
+    tools.create_issue(
+        "ABC",
+        "T",
+        due_date="2026-06-17",
+        priority="High",
+        extra_fields={"customfield_10016": 3},
+    )
 
     assert create.call_args == call(
         "ABC",
