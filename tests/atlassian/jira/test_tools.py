@@ -376,11 +376,13 @@ def test_create_issue_passes_standard_fields(mocker: MockerFixture):
     )
 
 
-def test_add_comment_converts_and_returns_ok(mocker: MockerFixture):
-    add = mocker.patch.object(client, "add_comment")
+def test_add_comment_converts_and_returns_id(mocker: MockerFixture):
+    mock_comment = MagicMock()
+    mock_comment.id = "99"
+    add = mocker.patch.object(client, "add_comment", return_value=mock_comment)
     mocker.patch.object(tools, "to_adf", return_value={"adf": True})
 
-    assert tools.add_comment("A-1", "hello") == "OK"
+    assert tools.add_comment("A-1", "hello") == "99"
     assert add.call_args == call("A-1", body={"adf": True})
 
 

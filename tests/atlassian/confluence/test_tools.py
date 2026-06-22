@@ -333,9 +333,7 @@ def test_restore_page_version_defaults_message(mocker: MockerFixture):
 @pytest.mark.parametrize(
     ("invoke", "client_attr"),
     [
-        (lambda: tools.add_comment("p1", "hi"), "add_comment"),
         (lambda: tools.delete_comment("c1"), "delete_comment"),
-        (lambda: tools.reply_to_comment("p1", "c1", "re"), "reply_to_comment"),
         (lambda: tools.create_inline_comment("p1", "note"), "create_inline_comment"),
         (lambda: tools.resolve_inline_comment("i1"), "resolve_inline_comment"),
         (lambda: tools.delete_inline_comment("i1"), "delete_inline_comment"),
@@ -356,6 +354,24 @@ def test_write_tools_return_ok(
 
     assert invoke() == "OK"
     client_mock.assert_called_once()
+
+
+def test_add_comment_returns_id(mocker: MockerFixture):
+    mock_comment = MagicMock()
+    mock_comment.id = "111"
+    mocker.patch.object(client, "add_comment", return_value=mock_comment)
+    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+
+    assert tools.add_comment("p1", "hi") == "111"
+
+
+def test_reply_to_comment_returns_id(mocker: MockerFixture):
+    mock_comment = MagicMock()
+    mock_comment.id = "222"
+    mocker.patch.object(client, "reply_to_comment", return_value=mock_comment)
+    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+
+    assert tools.reply_to_comment("p1", "c1", "re") == "222"
 
 
 # ---------------------------------------------------------------------------
