@@ -403,9 +403,9 @@ def add_comment(
     page_id: PageId,
     content: Annotated[str, Field(description="Markdown.")],
 ) -> str:
-    """Add a footer comment to a page."""
-    client.add_comment(page_id, body=to_adf(content))
-    return "OK"
+    """Add a footer comment to a page; returns the comment id."""
+    result = client.add_comment(page_id, body=to_adf(content))
+    return str(result.id)
 
 
 def edit_comment(
@@ -433,9 +433,9 @@ def reply_to_comment(
     parent_comment_id: Annotated[str, Field(description="Parent comment id.")],
     content: Annotated[str, Field(description="Markdown.")],
 ) -> str:
-    """Reply to a footer comment."""
-    client.reply_to_comment(page_id, parent_comment_id, body=to_adf(content))
-    return "OK"
+    """Reply to a footer comment; returns the comment id."""
+    result = client.reply_to_comment(page_id, parent_comment_id, body=to_adf(content))
+    return str(result.id)
 
 
 def get_comment_replies(

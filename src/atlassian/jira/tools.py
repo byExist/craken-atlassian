@@ -416,9 +416,9 @@ def add_comment(
     issue_key: IssueKey,
     body: Annotated[str, Field(description="Markdown.")],
 ) -> str:
-    """Add a comment to an issue."""
-    client.add_comment(issue_key, body=to_adf(body))
-    return "OK"
+    """Add a comment to an issue; returns the comment id."""
+    result = client.add_comment(issue_key, body=to_adf(body))
+    return str(result.id)
 
 
 def edit_comment(
