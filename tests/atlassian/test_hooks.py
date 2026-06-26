@@ -1,10 +1,8 @@
 """Tests for atlassian.hooks.error_hook.
 
 403 -> actionable PermissionError; other 4xx/5xx -> HTTPStatusError carrying the
-Atlassian response body so the offending field is visible without bisecting.
+response body verbatim so the offending field is visible without bisecting.
 """
-
-from typing import Any
 
 import httpx
 import pytest
@@ -53,65 +51,25 @@ def test_success_responses_pass_through(status: int):
     hook(httpx.Response(status, request=httpx.Request("GET", "https://x/y")))
 
 
-def test_400_surfaces_jira_field_errors():
+def test_error_surfaces_json_body_verbatim():
     hook = error_hook("Jira", "project")
-    body: dict[str, Any] = {
-        "errorMessages": [],
-        "errors": {"priority": "Field 'priority' cannot be set."},
-    }
+    body = {"errors": {"priority": "Field 'priority' cannot be set."}}
 
     with pytest.raises(httpx.HTTPStatusError) as exc:
         hook(_response(400, body))
 
     message = str(exc.value)
     assert "400" in message
-    assert "priority: Field 'priority' cannot be set." in message
+    # The whole JSON envelope is attached, so the field name and reason are both there.
+    assert "priority" in message
+    assert "Field 'priority' cannot be set." in message
 
 
-def test_400_surfaces_jira_error_messages():
-    hook = error_hook("Jira", "project")
-
-    with pytest.raises(httpx.HTTPStatusError) as exc:
-        hook(
-            _response(400, {"errorMessages": ["Issue type is required."], "errors": {}})
-        )
-
-    assert "Issue type is required." in str(exc.value)
-
-
-def test_error_surfaces_confluence_error_list():
-    hook = error_hook("Confluence", "space")
-    body = {"errors": [{"status": 400, "title": "Bad", "detail": "Body is invalid."}]}
-
-    with pytest.raises(httpx.HTTPStatusError) as exc:
-        hook(_response(400, body))
-
-    assert "Body is invalid." in str(exc.value)
-
-
-def test_error_falls_back_to_message_field():
-    hook = error_hook("Confluence", "space")
-
-    with pytest.raises(httpx.HTTPStatusError) as exc:
-        hook(_response(404, {"message": "Page not found"}))
-
-    assert "Page not found" in str(exc.value)
-
-
-def test_error_handles_non_dict_json_body():
-    hook = error_hook("Jira", "project")
-
-    with pytest.raises(httpx.HTTPStatusError) as exc:
-        hook(_response(400, ["unexpected", "list"]))
-
-    assert "unexpected" in str(exc.value)
-
-
-def test_error_handles_non_json_body():
+def test_error_surfaces_non_json_body():
     hook = error_hook("Jira", "project")
     resp = httpx.Response(
         500,
-        text="Internal Server Error",
+        text="<html>Bad Gateway</html>",
         request=httpx.Request("GET", "https://test.atlassian.net/x"),
     )
 
@@ -119,7 +77,19 @@ def test_error_handles_non_json_body():
         hook(resp)
 
     assert "500" in str(exc.value)
-    assert "Internal Server Error" in str(exc.value)
+    assert "<html>Bad Gateway</html>" in str(exc.value)
+
+
+def test_error_with_empty_body():
+    hook = error_hook("Jira", "project")
+    resp = httpx.Response(
+        404, request=httpx.Request("GET", "https://test.atlassian.net/x")
+    )
+
+    with pytest.raises(httpx.HTTPStatusError) as exc:
+        hook(resp)
+
+    assert "(empty response body)" in str(exc.value)
 
 
 def test_400_propagates_through_a_real_client(jira_api: MockServer):
@@ -136,7 +106,7 @@ def test_400_propagates_through_a_real_client(jira_api: MockServer):
     with pytest.raises(httpx.HTTPStatusError) as exc:
         client.create_issue("SAM", "x", priority="주요")
 
-    assert "priority: Field 'priority' cannot be set." in str(exc.value)
+    assert "Field 'priority' cannot be set." in str(exc.value)
 
 
 def test_403_propagates_through_a_real_client(jira_api: MockServer):
