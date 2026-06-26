@@ -15,7 +15,7 @@ from typing import Any
 
 import httpx
 
-from atlassian.hooks import forbidden_hook
+from atlassian.hooks import error_hook
 from atlassian.config import get_auth
 
 from atlassian.jira.schema.adf import ADF
@@ -63,7 +63,7 @@ def _get_client() -> httpx.Client:
             # No default Content-Type: httpx sets it per request (application/json
             # for json=, multipart for files=). A fixed default would break uploads.
             headers={"Accept": "application/json"},
-            event_hooks={"response": [forbidden_hook("Jira", "project")]},
+            event_hooks={"response": [error_hook("Jira", "project")]},
         )
     return _client
 

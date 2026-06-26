@@ -21,7 +21,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 
-from atlassian.hooks import forbidden_hook
+from atlassian.hooks import error_hook
 from atlassian.config import get_auth
 from atlassian.confluence.schema.adf import ADF
 from atlassian.confluence.schema.ancestor import Ancestor, MultiEntityResultAncestor
@@ -68,7 +68,7 @@ def _get_client() -> httpx.Client:
             # No default Content-Type: httpx sets it per request (application/json
             # for json=, multipart for files=). A fixed default would break uploads.
             headers={"Accept": "application/json"},
-            event_hooks={"response": [forbidden_hook("Confluence", "space")]},
+            event_hooks={"response": [error_hook("Confluence", "space")]},
         )
     return _client
 
