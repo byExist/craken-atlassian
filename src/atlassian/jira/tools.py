@@ -123,6 +123,24 @@ def get_project_statuses(project_key: ProjectKey) -> list[IssueTypeWithStatus]:
 # --- Issue ---
 
 
+# Only fields typed on JiraIssueFields, so responses carry no custom-field noise.
+_DEFAULT_ISSUE_FIELDS = [
+    "summary",
+    "description",
+    "status",
+    "assignee",
+    "reporter",
+    "issuetype",
+    "priority",
+    "labels",
+    "created",
+    "updated",
+    "resolutiondate",
+    "issuelinks",
+]
+_SEARCH_ISSUE_FIELDS = [f for f in _DEFAULT_ISSUE_FIELDS if f != "description"]
+
+
 def search_issues(
     jql: Annotated[str, Field(description="JQL query.")],
     limit: Limit = 50,
@@ -132,13 +150,12 @@ def search_issues(
     ] = None,
 ) -> SearchAndReconcileResults:
     """Search issues by JQL. Description is omitted; use get_issue for full detail."""
-    result = client.search_issues(
-        jql, max_results=limit, next_page_token=next_page_token
+    return client.search_issues(
+        jql,
+        max_results=limit,
+        next_page_token=next_page_token,
+        fields=_SEARCH_ISSUE_FIELDS,
     )
-    for issue in result.issues:
-        if issue.fields:
-            issue.fields.description = None
-    return result
 
 
 def get_issue(
@@ -159,7 +176,9 @@ def get_issue(
     ] = None,
 ) -> IssueBean:
     """Get an issue. Description is Markdown."""
-    issue = client.get_issue(issue_key, fields=fields)
+    issue = client.get_issue(
+        issue_key, fields=[*_DEFAULT_ISSUE_FIELDS, *(fields or [])]
+    )
     if issue.fields and isinstance(issue.fields.description, dict):
         issue.fields.description = to_md(issue.fields.description, plain=plain)
     if (
@@ -574,15 +593,12 @@ def get_board_issues(
     limit: Limit = 50,
 ) -> SearchResults:
     """Get issues on a board. Description is omitted; use get_issue for full detail."""
-    result = client.get_board_issues(
+    return client.get_board_issues(
         int(board_id),
         start_at=start_at,
         max_results=limit,
+        fields=_SEARCH_ISSUE_FIELDS,
     )
-    for issue in result.issues:
-        if issue.fields:
-            issue.fields.description = None
-    return result
 
 
 def get_backlog_issues(
@@ -591,15 +607,12 @@ def get_backlog_issues(
     limit: Limit = 50,
 ) -> SearchResults:
     """Get backlog issues (not in any sprint) on a board. Description is omitted; use get_issue for full detail."""
-    result = client.get_backlog_issues(
+    return client.get_backlog_issues(
         int(board_id),
         start_at=start_at,
         max_results=limit,
+        fields=_SEARCH_ISSUE_FIELDS,
     )
-    for issue in result.issues:
-        if issue.fields:
-            issue.fields.description = None
-    return result
 
 
 def get_epic_issues(
@@ -608,21 +621,18 @@ def get_epic_issues(
     limit: Limit = 50,
 ) -> SearchResults:
     """Get issues in an epic. Description is omitted; use get_issue for full detail."""
-    result = client.get_epic_issues(
+    return client.get_epic_issues(
         epic_key,
         start_at=start_at,
         max_results=limit,
+        fields=_SEARCH_ISSUE_FIELDS,
     )
-    for issue in result.issues:
-        if issue.fields:
-            issue.fields.description = None
-    return result
 
 
 def get_epic(
     epic_key: Annotated[str, Field(description="Epic issue key.")],
 ) -> Epic:
-    """Get an epic's details (name, summary, done status)."""
+    """Get an epic's details (name, summary, done status). Description is omitted; use get_issue for full detail."""
     return client.get_epic(epic_key)
 
 
@@ -653,15 +663,12 @@ def get_sprint_issues(
     limit: Limit = 50,
 ) -> SearchResults:
     """Get issues in a sprint. Description is omitted; use get_issue for full detail."""
-    result = client.get_sprint_issues(
+    return client.get_sprint_issues(
         int(sprint_id),
         start_at=start_at,
         max_results=limit,
+        fields=_SEARCH_ISSUE_FIELDS,
     )
-    for issue in result.issues:
-        if issue.fields:
-            issue.fields.description = None
-    return result
 
 
 def get_sprint(

@@ -80,35 +80,32 @@ def test_get_sprint_converts_id_to_int(mocker: MockerFixture):
 # ---------------------------------------------------------------------------
 
 
-def test_search_issues_strips_descriptions(mocker: MockerFixture):
-    results = SearchAndReconcileResults(
-        issues=[
-            IssueBean(key="A-1", fields=JiraIssueFields(description={"type": "doc"})),
-            IssueBean(key="A-2", fields=JiraIssueFields(description="text")),
-        ]
-    )
+def test_search_issues_requests_curated_fields(mocker: MockerFixture):
+    results = SearchAndReconcileResults(issues=[IssueBean(key="A-1")])
     search = mocker.patch.object(client, "search_issues", return_value=results)
 
     out = tools.search_issues("project = A", limit=5)
 
-    assert search.call_args == call("project = A", max_results=5, next_page_token=None)
-    for issue in out.issues:
-        assert issue.fields is not None
-        assert issue.fields.description is None
-
-
-def test_get_board_issues_converts_id_and_strips_descriptions(mocker: MockerFixture):
-    results = SearchAndReconcileResults(
-        issues=[IssueBean(key="A-1", fields=JiraIssueFields(description={"x": 1}))]
+    assert search.call_args == call(
+        "project = A",
+        max_results=5,
+        next_page_token=None,
+        fields=tools._SEARCH_ISSUE_FIELDS,
     )
+    assert "description" not in tools._SEARCH_ISSUE_FIELDS
+    assert out is results
+
+
+def test_get_board_issues_converts_id(mocker: MockerFixture):
+    results = SearchResults(issues=[IssueBean(key="A-1")])
     board_issues = mocker.patch.object(client, "get_board_issues", return_value=results)
 
     out = tools.get_board_issues("7")
 
-    assert board_issues.call_args == call(7, start_at=0, max_results=50)
-    first = out.issues[0].fields
-    assert first is not None
-    assert first.description is None
+    assert board_issues.call_args == call(
+        7, start_at=0, max_results=50, fields=tools._SEARCH_ISSUE_FIELDS
+    )
+    assert out is results
 
 
 # ---------------------------------------------------------------------------
@@ -171,7 +168,9 @@ def test_get_issue_passes_fields_to_client(mocker: MockerFixture):
 
     tools.get_issue("A-1", fields=["customfield_10004"])
 
-    assert get.call_args == call("A-1", fields=["customfield_10004"])
+    assert get.call_args == call(
+        "A-1", fields=[*tools._DEFAULT_ISSUE_FIELDS, "customfield_10004"]
+    )
 
 
 def test_get_comments_converts_bodies(mocker: MockerFixture):
@@ -694,24 +693,21 @@ def test_reader_delegates_to_client(
         (lambda: tools.get_epic_issues("E-1"), "get_epic_issues", "E-1"),
     ],
 )
-def test_issue_list_readers_strip_descriptions(
+def test_issue_list_readers_request_curated_fields(
     mocker: MockerFixture,
     invoke: Callable[[], object],
     client_attr: str,
     expected_id: object,
 ):
-    results = SearchResults(
-        issues=[IssueBean(key="A-1", fields=JiraIssueFields(description={"x": 1}))]
-    )
+    results = SearchResults(issues=[IssueBean(key="A-1")])
     delegate = mocker.patch.object(client, client_attr, return_value=results)
 
     out = invoke()
 
-    assert delegate.call_args == call(expected_id, start_at=0, max_results=50)
-    assert isinstance(out, SearchResults)
-    first = out.issues[0].fields
-    assert first is not None
-    assert first.description is None
+    assert delegate.call_args == call(
+        expected_id, start_at=0, max_results=50, fields=tools._SEARCH_ISSUE_FIELDS
+    )
+    assert out is results
 
 
 def test_update_issue_reads_from_file(mocker: MockerFixture, tmp_path: Path):

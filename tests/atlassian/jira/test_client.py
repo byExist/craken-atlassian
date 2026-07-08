@@ -31,7 +31,7 @@ from support import MockServer
 # ---------------------------------------------------------------------------
 
 
-def test_search_issues_posts_jql_with_all_fields(jira_api: MockServer):
+def test_search_issues_posts_jql_without_fields_by_default(jira_api: MockServer):
     jira_api.add(
         "POST",
         "/rest/api/3/search/jql",
@@ -42,10 +42,18 @@ def test_search_issues_posts_jql_with_all_fields(jira_api: MockServer):
 
     req = jira_api.request("POST", "/rest/api/3/search/jql")
     body = jira_api.body(req)
-    assert body == {"jql": "project = ABC", "maxResults": 10, "fields": ["*all"]}
+    assert body == {"jql": "project = ABC", "maxResults": 10}
     assert isinstance(result, SearchAndReconcileResults)
     assert result.issues[0].key == "ABC-1"
     assert result.is_last is True
+
+
+def test_search_issues_sends_given_fields_verbatim(jira_api: MockServer):
+    jira_api.add("POST", "/rest/api/3/search/jql", json={"issues": []})
+
+    client.search_issues("x", fields=["summary", "status"])
+
+    assert jira_api.body(jira_api.last)["fields"] == ["summary", "status"]
 
 
 def test_search_issues_includes_next_page_token_only_when_given(jira_api: MockServer):
@@ -71,28 +79,26 @@ def test_get_issue_fetches_by_key(jira_api: MockServer):
     assert issue.fields.summary == "Hi"
 
 
-def test_get_issue_requests_default_fields_only(jira_api: MockServer):
+def test_get_issue_omits_fields_param_when_not_given(jira_api: MockServer):
     jira_api.add("GET", "/rest/api/3/issue/ABC-1", json={"key": "ABC-1", "fields": {}})
 
     client.get_issue("ABC-1")
 
     req = jira_api.request("GET", "/rest/api/3/issue/ABC-1")
-    fields_param = req.url.params["fields"]
-    assert "customfield" not in fields_param
-    assert "summary" in fields_param
+    assert "fields" not in req.url.params
 
 
-def test_get_issue_appends_extra_fields(jira_api: MockServer):
+def test_get_issue_sends_given_fields_verbatim(jira_api: MockServer):
     jira_api.add(
         "GET",
         "/rest/api/3/issue/ABC-1",
         json={"key": "ABC-1", "fields": {"summary": "Hi", "customfield_10004": 5}},
     )
 
-    issue = client.get_issue("ABC-1", fields=["customfield_10004"])
+    issue = client.get_issue("ABC-1", fields=["summary", "customfield_10004"])
 
     req = jira_api.request("GET", "/rest/api/3/issue/ABC-1")
-    assert "customfield_10004" in req.url.params["fields"]
+    assert req.url.params["fields"] == "summary,customfield_10004"
     assert issue.fields is not None
     assert issue.fields.model_extra == {"customfield_10004": 5}  # type: ignore[union-attr]
 
@@ -661,6 +667,35 @@ def test_read_endpoint_targets_expected_path(
     invoke()
 
     assert jira_api.request(method, path).url.path == path
+
+
+@pytest.mark.parametrize(
+    ("invoke", "path"),
+    [
+        (
+            lambda: client.get_board_issues(7, fields=["summary"]),
+            "/rest/agile/1.0/board/7/issue",
+        ),
+        (
+            lambda: client.get_backlog_issues(7, fields=["summary"]),
+            "/rest/agile/1.0/board/7/backlog",
+        ),
+        (
+            lambda: client.get_sprint_issues(9, fields=["summary"]),
+            "/rest/agile/1.0/sprint/9/issue",
+        ),
+        (
+            lambda: client.get_epic_issues("E-1", fields=["summary"]),
+            "/rest/agile/1.0/epic/E-1/issue",
+        ),
+    ],
+)
+def test_agile_readers_send_fields_when_given(
+    jira_api: MockServer, invoke: Callable[[], object], path: str
+):
+    invoke()
+
+    assert jira_api.request("GET", path).url.params["fields"] == "summary"
 
 
 def test_get_changelogs_passes_pagination(jira_api: MockServer):

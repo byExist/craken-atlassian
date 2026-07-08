@@ -78,12 +78,11 @@ def search_issues(
     *,
     max_results: int = 50,
     next_page_token: str | None = None,
+    fields: list[str] | None = None,
 ) -> SearchAndReconcileResults:
-    body: dict[str, Any] = {
-        "jql": jql,
-        "maxResults": max_results,
-        "fields": ["*all"],
-    }
+    body: dict[str, Any] = {"jql": jql, "maxResults": max_results}
+    if fields is not None:
+        body["fields"] = fields
     if next_page_token is not None:
         body["nextPageToken"] = next_page_token
     resp = _get_client().post("/rest/api/3/search/jql", json=body)
@@ -91,31 +90,13 @@ def search_issues(
     return SearchAndReconcileResults.model_validate(resp.json())
 
 
-_DEFAULT_ISSUE_FIELDS = ",".join(
-    [
-        "summary",
-        "description",
-        "status",
-        "assignee",
-        "reporter",
-        "issuetype",
-        "priority",
-        "labels",
-        "created",
-        "updated",
-        "resolutiondate",
-        "issuelinks",
-    ]
-)
-
-
 def get_issue(issue_key: str, fields: list[str] | None = None) -> IssueBean:
-    field_param = _DEFAULT_ISSUE_FIELDS
-    if fields:
-        field_param = f"{_DEFAULT_ISSUE_FIELDS},{','.join(fields)}"
+    params: dict[str, Any] = {}
+    if fields is not None:
+        params["fields"] = ",".join(fields)
     resp = _get_client().get(
         f"/rest/api/3/issue/{issue_key}",
-        params={"fields": field_param},
+        params=params,
     )
     resp.raise_for_status()
     return IssueBean.model_validate(resp.json())
@@ -363,10 +344,14 @@ def get_board_issues(
     *,
     start_at: int = 0,
     max_results: int = 50,
+    fields: list[str] | None = None,
 ) -> SearchResults:
+    params: dict[str, Any] = {"startAt": start_at, "maxResults": max_results}
+    if fields is not None:
+        params["fields"] = ",".join(fields)
     resp = _get_client().get(
         f"/rest/agile/1.0/board/{board_id}/issue",
-        params={"startAt": start_at, "maxResults": max_results},
+        params=params,
     )
     resp.raise_for_status()
     return SearchResults.model_validate(resp.json())
@@ -377,10 +362,14 @@ def get_backlog_issues(
     *,
     start_at: int = 0,
     max_results: int = 50,
+    fields: list[str] | None = None,
 ) -> SearchResults:
+    params: dict[str, Any] = {"startAt": start_at, "maxResults": max_results}
+    if fields is not None:
+        params["fields"] = ",".join(fields)
     resp = _get_client().get(
         f"/rest/agile/1.0/board/{board_id}/backlog",
-        params={"startAt": start_at, "maxResults": max_results},
+        params=params,
     )
     resp.raise_for_status()
     return SearchResults.model_validate(resp.json())
@@ -418,10 +407,14 @@ def get_sprint_issues(
     *,
     start_at: int = 0,
     max_results: int = 50,
+    fields: list[str] | None = None,
 ) -> SearchResults:
+    params: dict[str, Any] = {"startAt": start_at, "maxResults": max_results}
+    if fields is not None:
+        params["fields"] = ",".join(fields)
     resp = _get_client().get(
         f"/rest/agile/1.0/sprint/{sprint_id}/issue",
-        params={"startAt": start_at, "maxResults": max_results},
+        params=params,
     )
     resp.raise_for_status()
     return SearchResults.model_validate(resp.json())
@@ -432,10 +425,14 @@ def get_epic_issues(
     *,
     start_at: int = 0,
     max_results: int = 50,
+    fields: list[str] | None = None,
 ) -> SearchResults:
+    params: dict[str, Any] = {"startAt": start_at, "maxResults": max_results}
+    if fields is not None:
+        params["fields"] = ",".join(fields)
     resp = _get_client().get(
         f"/rest/agile/1.0/epic/{epic_key}/issue",
-        params={"startAt": start_at, "maxResults": max_results},
+        params=params,
     )
     resp.raise_for_status()
     return SearchResults.model_validate(resp.json())
