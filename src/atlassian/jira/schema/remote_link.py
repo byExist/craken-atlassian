@@ -6,11 +6,11 @@ from atlassian.jira.schema.base import JiraModel
 class RemoteObject(JiraModel):
     """The remote object linked to an issue.
 
-    OpenAPI: RemoteObject
+    OpenAPI: RemoteObject (required: title, url)
     """
 
-    url: str | None = None
-    title: str | None = None
+    url: str
+    title: str
     summary: str | None = None
 
 

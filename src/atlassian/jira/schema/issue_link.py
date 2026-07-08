@@ -36,10 +36,13 @@ class LinkedIssue(JiraModel):
 class IssueLink(JiraModel):
     """A link between two issues (e.g. 'blocks', 'relates to').
 
-    OpenAPI: IssueLink
+    OpenAPI: IssueLink (required: inwardIssue, outwardIssue, type)
+
+    inwardIssue/outwardIssue stay optional despite the spec: a link carries only
+    one direction, so requiring both would reject every real response.
     """
 
     id: str | None = None
-    type: IssueLinkType | None = None
+    type: IssueLinkType
     inward_issue: LinkedIssue | None = None
     outward_issue: LinkedIssue | None = None

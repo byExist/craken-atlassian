@@ -47,7 +47,8 @@ class IssueTypeWithStatus(JiraModel):
     """Issue type with the statuses available to it in a project.
 
     OpenAPI: IssueTypeWithStatus — GET /rest/api/3/project/{key}/statuses item
+    (required: id, name, self, statuses, subtask — only name/statuses are modelled)
     """
 
-    name: str | None = None
-    statuses: list[StatusDetails] = []
+    name: str
+    statuses: list[StatusDetails]

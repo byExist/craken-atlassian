@@ -6,12 +6,22 @@ the trickier issue/permission models — these guarantees hold for every model
 built on JiraModel.
 """
 
+from collections.abc import Callable
+
+import pytest
+from pydantic import ValidationError
+
+import payloads
+from atlassian.jira.schema.base import JiraModel
+from atlassian.jira.schema.common import IssueTypeWithStatus
 from atlassian.jira.schema.issue import (
     IssueBean,
     JiraIssueFields,
     SearchAndReconcileResults,
 )
+from atlassian.jira.schema.issue_link import IssueLink
 from atlassian.jira.schema.permission import Permissions
+from atlassian.jira.schema.remote_link import RemoteObject
 from atlassian.jira.schema.user import User
 
 
@@ -127,6 +137,39 @@ def test_search_and_reconcile_results_aliases():
     assert result.issues[0].key == "A-1"
     assert result.next_page_token == "tok"
     assert result.is_last is False
+
+
+# --- requiredness contract ---
+
+
+@pytest.mark.parametrize(
+    ("model", "build", "required"),
+    [
+        (RemoteObject, payloads.remote_object, ("url", "title")),
+        (IssueTypeWithStatus, payloads.issue_type_with_status, ("name", "statuses")),
+        (IssueLink, payloads.issue_link, ("type",)),
+    ],
+)
+def test_required_fields(
+    model: type[JiraModel],
+    build: Callable[[], dict[str, object]],
+    required: tuple[str, ...],
+):
+    model.model_validate(build())  # minimal payload parses
+    for field in required:
+        payload = build()
+        del payload[field]
+        with pytest.raises(ValidationError):
+            model.model_validate(payload)
+
+
+def test_issue_link_carries_one_direction():
+    """Spec marks inward+outward required, but each link has exactly one."""
+    inward = IssueLink.model_validate(payloads.issue_link(inwardIssue={"key": "A-1"}))
+    outward = IssueLink.model_validate(payloads.issue_link(outwardIssue={"key": "A-2"}))
+
+    assert inward.inward_issue is not None and inward.outward_issue is None
+    assert outward.outward_issue is not None and outward.inward_issue is None
 
 
 def test_permissions_map_parses_have_permission():
