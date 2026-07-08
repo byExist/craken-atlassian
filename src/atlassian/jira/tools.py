@@ -58,6 +58,7 @@ Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based
 Plain: TypeAlias = Annotated[
     bool, Field(description="Set false to keep ADF-only features for editing.")
 ]
+Ok: TypeAlias = Literal["ok"]
 
 # Reused field descriptions
 _TIME_SPENT = 'Time spent, e.g. "3h 20m" (#d/#h/#m).'
@@ -264,7 +265,7 @@ def update_issue(
             description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."
         ),
     ] = None,
-) -> str:
+) -> Ok:
     """Update an issue. Provide description inline or via from_file, not both."""
     if description and from_file:
         raise ValueError("provide either description or from_file, not both")
@@ -280,7 +281,7 @@ def update_issue(
         priority=priority,
         extra_fields=extra_fields,
     )
-    return "OK"
+    return "ok"
 
 
 def change_issue_type(
@@ -332,7 +333,7 @@ def change_issue_type(
                 f"changing to '{issue_type}' stays at the same level and takes no parent"
             )
         client.change_issue_type(issue_key, issue_type=issue_type)
-    return "OK"
+    return "ok"
 
 
 def assign_issue(
@@ -341,16 +342,16 @@ def assign_issue(
         str | None,
         Field(description="Assignee accountId (from search_users); omit to unassign."),
     ] = None,
-) -> str:
+) -> Ok:
     """Assign an issue, or unassign if assignee is omitted."""
     client.assign_issue(issue_key, assignee)
-    return "OK"
+    return "ok"
 
 
-def delete_issue(issue_key: IssueKey) -> str:
+def delete_issue(issue_key: IssueKey) -> Ok:
     """Delete an issue."""
     client.delete_issue(issue_key)
-    return "OK"
+    return "ok"
 
 
 def get_changelogs(
@@ -408,10 +409,10 @@ def transition_issue(
     transition_id: Annotated[
         str, Field(description="Transition id (from get_transitions).")
     ],
-) -> str:
+) -> Ok:
     """Transition an issue to a new status."""
     client.transition_issue(issue_key, transition_id)
-    return "OK"
+    return "ok"
 
 
 # --- Comment ---
@@ -444,19 +445,19 @@ def edit_comment(
     issue_key: IssueKey,
     comment_id: Annotated[str, Field(description="Comment id.")],
     body: Annotated[str, Field(description="Markdown.")],
-) -> str:
+) -> Ok:
     """Edit a comment."""
     client.update_comment(issue_key, comment_id, body=to_adf(body))
-    return "OK"
+    return "ok"
 
 
 def delete_comment(
     issue_key: IssueKey,
     comment_id: Annotated[str, Field(description="Comment id.")],
-) -> str:
+) -> Ok:
     """Delete a comment."""
     client.delete_comment(issue_key, comment_id)
-    return "OK"
+    return "ok"
 
 
 # --- Link ---
@@ -473,18 +474,18 @@ def create_issue_link(
     ],
     inward_issue_key: Annotated[str, Field(description="Inward issue key.")],
     outward_issue_key: Annotated[str, Field(description="Outward issue key.")],
-) -> str:
+) -> Ok:
     """Create a link between two issues."""
     client.create_issue_link(link_type, inward_issue_key, outward_issue_key)
-    return "OK"
+    return "ok"
 
 
 def remove_issue_link(
     link_id: Annotated[str, Field(description="Link id.")],
-) -> str:
+) -> Ok:
     """Remove a link between two issues."""
     client.delete_issue_link(link_id)
-    return "OK"
+    return "ok"
 
 
 # --- Remote Link ---
@@ -502,7 +503,7 @@ def create_remote_issue_link(
     relationship: Annotated[
         str | None, Field(description="Relationship text, e.g. 'relates to'.")
     ] = None,
-) -> str:
+) -> Ok:
     """Create a remote link on an issue."""
     client.create_remote_issue_link(
         issue_key,
@@ -510,16 +511,16 @@ def create_remote_issue_link(
         title=title,
         relationship=relationship,
     )
-    return "OK"
+    return "ok"
 
 
 def delete_remote_issue_link(
     issue_key: IssueKey,
     link_id: Annotated[str, Field(description="Remote link id.")],
-) -> str:
+) -> Ok:
     """Delete a remote link from an issue."""
     client.delete_remote_issue_link(issue_key, link_id)
-    return "OK"
+    return "ok"
 
 
 # --- Watcher ---
@@ -530,16 +531,16 @@ def get_watchers(issue_key: IssueKey) -> Watchers:
     return client.get_watchers(issue_key)
 
 
-def add_watcher(issue_key: IssueKey, account_id: AccountId) -> str:
+def add_watcher(issue_key: IssueKey, account_id: AccountId) -> Ok:
     """Add a watcher to an issue."""
     client.add_watcher(issue_key, account_id)
-    return "OK"
+    return "ok"
 
 
-def remove_watcher(issue_key: IssueKey, account_id: AccountId) -> str:
+def remove_watcher(issue_key: IssueKey, account_id: AccountId) -> Ok:
     """Remove a watcher from an issue."""
     client.remove_watcher(issue_key, account_id)
-    return "OK"
+    return "ok"
 
 
 # --- Field ---
@@ -681,10 +682,10 @@ def get_sprint(
 def move_issues_to_sprint(
     sprint_id: Annotated[str, Field(description="Sprint id.")],
     issue_keys: Annotated[list[str], Field(description="Issue keys to move.")],
-) -> str:
+) -> Ok:
     """Move issues to a sprint."""
     client.move_issues_to_sprint(int(sprint_id), issue_keys=issue_keys)
-    return "OK"
+    return "ok"
 
 
 def create_sprint(
@@ -715,7 +716,7 @@ def update_sprint(
     goal: Annotated[str | None, Field(description="New goal.")] = None,
     start_date: Annotated[str | None, Field(description=_SPRINT_DATE)] = None,
     end_date: Annotated[str | None, Field(description=_SPRINT_DATE)] = None,
-) -> str:
+) -> Ok:
     """Update a sprint."""
     client.update_sprint(
         int(sprint_id),
@@ -725,32 +726,32 @@ def update_sprint(
         start_date=start_date,
         end_date=end_date,
     )
-    return "OK"
+    return "ok"
 
 
 def delete_sprint(
     sprint_id: Annotated[str, Field(description="Sprint id.")],
-) -> str:
+) -> Ok:
     """Delete a sprint."""
     client.delete_sprint(int(sprint_id))
-    return "OK"
+    return "ok"
 
 
 def link_to_epic(
     epic_key: Annotated[str, Field(description="Epic issue key.")],
     issue_keys: Annotated[list[str], Field(description="Issue keys to link.")],
-) -> str:
+) -> Ok:
     """Link issues to an epic."""
     client.link_to_epic(epic_key, issue_keys=issue_keys)
-    return "OK"
+    return "ok"
 
 
 def move_to_backlog(
     issue_keys: Annotated[list[str], Field(description="Issue keys to move.")],
-) -> str:
+) -> Ok:
     """Move issues from sprints back to the backlog."""
     client.move_to_backlog(issue_keys=issue_keys)
-    return "OK"
+    return "ok"
 
 
 # --- Worklog ---
@@ -775,7 +776,7 @@ def add_worklog(
     time_spent: Annotated[str, Field(description=_TIME_SPENT)],
     started: Annotated[str | None, Field(description=_STARTED)] = None,
     comment: Annotated[str | None, Field(description="Markdown.")] = None,
-) -> str:
+) -> Ok:
     """Add a worklog entry to an issue."""
     client.add_worklog(
         issue_key,
@@ -783,7 +784,7 @@ def add_worklog(
         started=started,
         comment=to_adf(comment) if comment else None,
     )
-    return "OK"
+    return "ok"
 
 
 def update_worklog(
@@ -792,7 +793,7 @@ def update_worklog(
     time_spent: Annotated[str | None, Field(description=_TIME_SPENT)] = None,
     started: Annotated[str | None, Field(description=_STARTED)] = None,
     comment: Annotated[str | None, Field(description="Markdown.")] = None,
-) -> str:
+) -> Ok:
     """Update a worklog entry."""
     client.update_worklog(
         issue_key,
@@ -801,16 +802,16 @@ def update_worklog(
         started=started,
         comment=to_adf(comment) if comment else None,
     )
-    return "OK"
+    return "ok"
 
 
 def delete_worklog(
     issue_key: IssueKey,
     worklog_id: Annotated[str, Field(description="Worklog id.")],
-) -> str:
+) -> Ok:
     """Delete a worklog entry from an issue."""
     client.delete_worklog(issue_key, worklog_id)
-    return "OK"
+    return "ok"
 
 
 # --- Version ---
@@ -845,7 +846,7 @@ def update_version(
     start_date: Annotated[str | None, Field(description=_VERSION_DATE)] = None,
     release_date: Annotated[str | None, Field(description=_VERSION_DATE)] = None,
     released: Annotated[bool | None, Field(description="Mark as released.")] = None,
-) -> str:
+) -> Ok:
     """Update a version (release)."""
     client.update_version(
         version_id,
@@ -855,12 +856,12 @@ def update_version(
         release_date=release_date,
         released=released,
     )
-    return "OK"
+    return "ok"
 
 
 def delete_version(
     version_id: Annotated[str, Field(description="Version id.")],
-) -> str:
+) -> Ok:
     """Delete a version (release)."""
     client.delete_version(version_id)
-    return "OK"
+    return "ok"

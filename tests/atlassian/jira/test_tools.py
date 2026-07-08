@@ -281,7 +281,7 @@ def test_update_issue_converts_and_returns_ok(mocker: MockerFixture):
     update = mocker.patch.object(client, "update_issue")
     mocker.patch.object(tools, "to_adf", return_value={"adf": True})
 
-    assert tools.update_issue("A-1", summary="S", description="# d") == "OK"
+    assert tools.update_issue("A-1", summary="S", description="# d") == "ok"
     assert update.call_args == call(
         "A-1",
         summary="S",
@@ -302,7 +302,7 @@ def test_update_issue_rejects_description_and_from_file_together():
 def test_update_issue_passes_parent(mocker: MockerFixture):
     update = mocker.patch.object(client, "update_issue")
 
-    assert tools.update_issue("A-1", parent="A-2") == "OK"
+    assert tools.update_issue("A-1", parent="A-2") == "ok"
     assert update.call_args == call(
         "A-1",
         summary=None,
@@ -389,7 +389,7 @@ def test_add_worklog_converts_comment(mocker: MockerFixture):
     add = mocker.patch.object(client, "add_worklog")
     mocker.patch.object(tools, "to_adf", return_value={"adf": True})
 
-    assert tools.add_worklog("A-1", "2h", comment="note") == "OK"
+    assert tools.add_worklog("A-1", "2h", comment="note") == "ok"
     assert add.call_args == call(
         "A-1", time_spent="2h", started=None, comment={"adf": True}
     )
@@ -439,7 +439,7 @@ def test_change_issue_type_down_with_parent(
 ):
     mocker.patch.object(client, "get_issue", return_value=_issue("Task", 0))
 
-    assert tools.change_issue_type("ABC-1", "Sub-task", parent="ABC-2") == "OK"
+    assert tools.change_issue_type("ABC-1", "Sub-task", parent="ABC-2") == "ok"
     assert change_type.call_args == call(
         "ABC-1", issue_type="Sub-task", parent_key="ABC-2"
     )
@@ -459,7 +459,7 @@ def test_change_issue_type_up_clears_parent(
 ):
     mocker.patch.object(client, "get_issue", return_value=_issue("Task", 0))
 
-    assert tools.change_issue_type("ABC-1", "Epic") == "OK"
+    assert tools.change_issue_type("ABC-1", "Epic") == "ok"
     assert change_type.call_args == call("ABC-1", issue_type="Epic", clear_parent=True)
 
 
@@ -475,7 +475,7 @@ def test_change_issue_type_same_level_rejects_parent(
 def test_change_issue_type_same_level(mocker: MockerFixture, change_type: MagicMock):
     mocker.patch.object(client, "get_issue", return_value=_issue("Task", 0))
 
-    assert tools.change_issue_type("ABC-1", "Story") == "OK"
+    assert tools.change_issue_type("ABC-1", "Story") == "ok"
     assert change_type.call_args == call("ABC-1", issue_type="Story")
 
 
@@ -511,7 +511,7 @@ def test_change_issue_type_target_without_hierarchy_level(mocker: MockerFixture)
 
 
 # ---------------------------------------------------------------------------
-# Write tools that return "OK"
+# Write tools that return "ok"
 # ---------------------------------------------------------------------------
 
 
@@ -551,7 +551,7 @@ def test_write_tools_return_ok(
 ):
     client_mock = mocker.patch.object(client, client_attr, return_value=None)
 
-    assert invoke() == "OK"
+    assert invoke() == "ok"
     client_mock.assert_called_once()
 
 
@@ -716,7 +716,7 @@ def test_update_issue_reads_from_file(mocker: MockerFixture, tmp_path: Path):
     update = mocker.patch.object(client, "update_issue")
     to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
 
-    assert tools.update_issue("A-1", from_file=str(body_file)) == "OK"
+    assert tools.update_issue("A-1", from_file=str(body_file)) == "ok"
     assert to_adf.call_args == call("disk body")
     assert update.call_args == call(
         "A-1",
