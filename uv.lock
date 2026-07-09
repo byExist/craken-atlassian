@@ -47,7 +47,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "marklas", specifier = ">=0.8.0" },
+    { name = "marklas", specifier = ">=0.8.4" },
     { name = "mcp", specifier = ">=1.26.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
@@ -397,14 +397,14 @@ wheels = [
 
 [[package]]
 name = "marklas"
-version = "0.8.0"
+version = "0.8.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mistune" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d3/82/4e08ee4f5db77c96dc53c892d254509bf8b62cd0b9f5aabc1a390b61b708/marklas-0.8.0.tar.gz", hash = "sha256:d2f75d1077be269156fe970795a77e8420b9738bc1bf24fd0e3c416057abc784", size = 47459, upload-time = "2026-05-31T15:10:30.175Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/e5/7ec20ed92b3ca87bd07ccec65cdb6990e46fe2b9a5f6a453fd1e8d4cc776/marklas-0.8.4.tar.gz", hash = "sha256:700a79330ea474969fdfaf371040b886ae38e5c9c6d03563a9209e13f9a71eab", size = 48850, upload-time = "2026-07-09T07:24:25.371Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/49/5fd7466597259bff1fddc813bf0f95341e0e1ce65920a0d26d92a3b9d8b0/marklas-0.8.0-py3-none-any.whl", hash = "sha256:c84e4658cd344c2e5ffb8a6fe9a76b43aef3c07ab4a9fa51aa2da0786db32829", size = 55955, upload-time = "2026-05-31T15:10:28.83Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/ff/6581964c362296c235b8b48847719106801b870481d56adf2a04603bcb0a/marklas-0.8.4-py3-none-any.whl", hash = "sha256:ae0ad0004ca6450c8b477aa10a509ba05c93c4a7382fc8b172b256dbb2e9b969", size = 57238, upload-time = "2026-07-09T07:24:24.153Z" },
 ]
 
 [[package]]
