@@ -200,7 +200,12 @@ def create_issue(
     ] = "Task",
     description: Annotated[str | None, Field(description="Markdown.")] = None,
     assignee: Annotated[
-        str | None, Field(description="Assignee accountId (from search_users).")
+        str | None,
+        Field(
+            description="Assignee accountId (from search_users), or 'unassigned' "
+            "to create the issue without an assignee. Omit to apply the "
+            "project's default assignee."
+        ),
     ] = None,
     parent: ParentKey = None,
     from_file: Annotated[
@@ -250,7 +255,11 @@ def update_issue(
         Field(description="Absolute path to read the description from."),
     ] = None,
     assignee: Annotated[
-        str | None, Field(description="Assignee accountId (from search_users).")
+        str | None,
+        Field(
+            description="New assignee accountId (from search_users), or "
+            "'unassigned' to clear the assignee."
+        ),
     ] = None,
     due_date: Annotated[
         str | None, Field(description="Due date as YYYY-MM-DD.")

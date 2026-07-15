@@ -324,6 +324,15 @@ def test_create_issue_includes_description_and_assignee(jira_api: MockServer):
     assert body["fields"]["assignee"] == {"accountId": "acc-1"}
 
 
+def test_create_issue_unassigned_sentinel_sends_null_account_id(jira_api: MockServer):
+    jira_api.add("POST", "/rest/api/3/issue", json={"key": "ABC-9"})
+
+    client.create_issue("ABC", "T", assignee=client.UNASSIGNED)
+
+    body = jira_api.body(jira_api.last)
+    assert body["fields"]["assignee"] == {"accountId": None}
+
+
 def test_create_issue_sets_parent(jira_api: MockServer):
     jira_api.add("POST", "/rest/api/3/issue", json={"key": "ABC-9"})
 
@@ -393,6 +402,15 @@ def test_update_issue_sets_standard_fields(jira_api: MockServer):
     assert body["fields"]["duedate"] == "2026-06-17"
     assert body["fields"]["priority"] == {"name": "High"}
     assert body["fields"]["assignee"] == {"accountId": "acc-1"}
+
+
+def test_update_issue_unassigned_sentinel_sends_null_account_id(jira_api: MockServer):
+    jira_api.add("PUT", "/rest/api/3/issue/ABC-1", json={})
+
+    client.update_issue("ABC-1", assignee=client.UNASSIGNED)
+
+    body = jira_api.body(jira_api.last)
+    assert body["fields"]["assignee"] == {"accountId": None}
 
 
 def test_update_issue_merges_extra_fields(jira_api: MockServer):

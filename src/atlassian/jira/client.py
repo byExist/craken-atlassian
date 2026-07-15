@@ -46,6 +46,11 @@ from atlassian.jira.schema.version import PageBeanVersion, ProjectVersion
 from atlassian.jira.schema.watcher import Watchers
 from atlassian.jira.schema.worklog import PageOfWorklogs, Worklog
 
+# Sentinel assignee value meaning "explicitly unassigned". Jira treats a null
+# accountId as unassign, while an absent assignee field applies the project's
+# default assignee — the sentinel lets callers express the former.
+UNASSIGNED = "unassigned"
+
 # ---------------------------------------------------------------------------
 # Lazy singleton
 # ---------------------------------------------------------------------------
@@ -472,7 +477,7 @@ def create_issue(
     if description is not None:
         fields["description"] = description
     if assignee is not None:
-        fields["assignee"] = {"accountId": assignee}
+        fields["assignee"] = {"accountId": None if assignee == UNASSIGNED else assignee}
     if parent_key is not None:
         fields["parent"] = {"key": parent_key}
     if due_date is not None:
@@ -503,7 +508,7 @@ def update_issue(
     if parent_key is not None:
         fields["parent"] = {"key": parent_key}
     if assignee is not None:
-        fields["assignee"] = {"accountId": assignee}
+        fields["assignee"] = {"accountId": None if assignee == UNASSIGNED else assignee}
     if due_date is not None:
         fields["duedate"] = due_date
     if priority is not None:
