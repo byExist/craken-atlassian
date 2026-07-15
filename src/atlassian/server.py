@@ -8,16 +8,24 @@ from atlassian.confluence import tools as confluence
 from atlassian.jira import permissions as jira_permissions
 from atlassian.jira import tools as jira
 
-mcp = FastMCP(
-    "atlassian",
-    instructions=(
+
+def _instructions() -> str:
+    base = (
         "Jira and Confluence via Markdown (not raw ADF). Search issues with JQL "
         "(jira_search_issues) and pages with CQL (confluence_search_content). "
         "Write tools (create/update/delete) are gated by config and absent in "
         "read-only sessions — if a write tool is missing, it can be enabled via "
         "/plugin config atlassian."
-    ),
-)
+    )
+    if config.domain is None:
+        return base
+    return (
+        f"Site: https://{config.domain} "
+        f"(issue links: https://{config.domain}/browse/<ISSUE-KEY>). {base}"
+    )
+
+
+mcp = FastMCP("atlassian", instructions=_instructions())
 
 
 def _bind(

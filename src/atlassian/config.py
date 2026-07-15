@@ -10,6 +10,9 @@ class Config(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="ATLASSIAN_")
 
     write_enabled: bool = False
+    # Also required by Auth; optional here so the server can describe the site
+    # in its MCP instructions while still starting without credentials.
+    domain: str | None = None
 
 
 class Auth(BaseSettings):

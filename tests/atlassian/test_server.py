@@ -39,6 +39,19 @@ def _tool_map(
     }
 
 
+def _instructions_text(mocker: MockerFixture, *, domain: str | None) -> str:
+    """Reload server.py with the given domain; return the MCP instructions."""
+    import atlassian.server as server_module
+    from atlassian.config import config
+    from atlassian.jira import permissions
+
+    mocker.patch.object(config, "write_enabled", False)
+    mocker.patch.object(config, "domain", domain)
+    mocker.patch.object(permissions, "globally_unavailable", lambda: set[str]())
+    server_module = importlib.reload(server_module)
+    return server_module.mcp.instructions or ""
+
+
 # --- read-only vs write-enabled binding ---
 
 
@@ -118,3 +131,20 @@ def test_confluence_writes_are_never_gated(mocker: MockerFixture):
     tools = _tool_map(mocker, write_enabled=True, unavailable={"CREATE_ISSUES"})
 
     assert "Not permitted:" not in tools["confluence_create_page"]
+
+
+# --- server instructions ---
+
+
+def test_instructions_announce_site_when_domain_is_set(mocker: MockerFixture):
+    text = _instructions_text(mocker, domain="example.atlassian.net")
+
+    assert "Site: https://example.atlassian.net" in text
+    assert "https://example.atlassian.net/browse/<ISSUE-KEY>" in text
+
+
+def test_instructions_omit_site_without_domain(mocker: MockerFixture):
+    text = _instructions_text(mocker, domain=None)
+
+    assert text.startswith("Jira and Confluence")
+    assert "Site:" not in text
