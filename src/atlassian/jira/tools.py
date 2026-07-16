@@ -473,7 +473,7 @@ def delete_comment(
 
 
 def get_link_types() -> IssueLinkTypes:
-    """Get available issue link types."""
+    """Get available issue link types; each reads inward <outward-description> outward."""
     return client.get_link_types()
 
 
@@ -481,10 +481,14 @@ def create_issue_link(
     link_type: Annotated[
         str, Field(description="Link type name (from get_link_types).")
     ],
-    inward_issue_key: Annotated[str, Field(description="Inward issue key.")],
-    outward_issue_key: Annotated[str, Field(description="Outward issue key.")],
+    inward_issue_key: Annotated[
+        str, Field(description="Subject issue — the outward description reads from it.")
+    ],
+    outward_issue_key: Annotated[
+        str, Field(description="Object issue — the outward description points at it.")
+    ],
 ) -> Ok:
-    """Create a link between two issues."""
+    """Create a link between two issues; reads inward <outward-description> outward (e.g. Blocks: inward blocks outward, not the reverse)."""
     client.create_issue_link(link_type, inward_issue_key, outward_issue_key)
     return "ok"
 
