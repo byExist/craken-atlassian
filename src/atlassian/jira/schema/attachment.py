@@ -6,11 +6,13 @@ from atlassian.jira.schema.base import JiraModel
 class Attachment(JiraModel):
     """An issue attachment.
 
-    OpenAPI: Attachment — POST /rest/api/3/issue/{id}/attachments response item
+    OpenAPI: Attachment — POST /rest/api/3/issue/{id}/attachments response item, IssueBean.fields.attachment item
     """
 
     id: str | None = None
     filename: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
 
 
 class AttachmentMetadata(JiraModel):

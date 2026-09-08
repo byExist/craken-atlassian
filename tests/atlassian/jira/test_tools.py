@@ -96,6 +96,8 @@ def test_search_issues_requests_curated_fields(mocker: MockerFixture):
         fields=tools._SEARCH_ISSUE_FIELDS,
     )
     assert "description" not in tools._SEARCH_ISSUE_FIELDS
+    assert "attachment" not in tools._SEARCH_ISSUE_FIELDS
+    assert "attachment" in tools._DEFAULT_ISSUE_FIELDS
     assert out is results
 
 

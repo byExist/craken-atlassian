@@ -130,8 +130,12 @@ _DEFAULT_ISSUE_FIELDS = [
     "updated",
     "resolutiondate",
     "issuelinks",
+    "attachment",
 ]
-_SEARCH_ISSUE_FIELDS = [f for f in _DEFAULT_ISSUE_FIELDS if f != "description"]
+# Lists stay light: no body, no attachment inventory.
+_SEARCH_ISSUE_FIELDS = [
+    f for f in _DEFAULT_ISSUE_FIELDS if f not in ("description", "attachment")
+]
 
 
 def search_issues(

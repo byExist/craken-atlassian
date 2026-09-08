@@ -56,6 +56,39 @@ def test_explicit_validation_alias_overrides_generated_one():
     assert fields.issue_links == []
 
 
+def test_attachment_list_is_typed_when_present():
+    fields = JiraIssueFields.model_validate(
+        {
+            "attachment": [
+                {
+                    "id": "334569",
+                    "filename": "bounce-loading.gif",
+                    "mimeType": "image/gif",
+                    "size": 117101,
+                    "self": "https://example/rest/api/3/attachment/334569",
+                }
+            ]
+        }
+    )
+
+    assert fields.attachment is not None
+    dumped = fields.model_dump(by_alias=True)["attachment"]
+    assert dumped == [
+        {
+            "id": "334569",
+            "filename": "bounce-loading.gif",
+            "mimeType": "image/gif",
+            "size": 117101,
+        }
+    ]
+
+
+def test_attachment_is_omitted_when_not_requested():
+    dumped = JiraIssueFields.model_validate({"summary": "s"}).model_dump(by_alias=True)
+
+    assert "attachment" not in dumped
+
+
 def test_unknown_keys_are_ignored():
     issue = IssueBean.model_validate({"key": "A-1", "somethingNew": 123})
 

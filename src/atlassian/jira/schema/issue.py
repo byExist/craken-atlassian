@@ -4,6 +4,7 @@ from pydantic import ConfigDict, Field
 
 from atlassian.jira.schema.base import JiraModel
 from atlassian.jira.schema.adf import ADF
+from atlassian.jira.schema.attachment import Attachment
 from atlassian.jira.schema.common import IssueTypeDetails, Priority, StatusDetails
 from atlassian.jira.schema.issue_link import IssueLink
 from atlassian.jira.schema.user import User
@@ -33,6 +34,9 @@ class JiraIssueFields(JiraModel):
     issue_links: list[IssueLink] = Field(
         default_factory=list[IssueLink], validation_alias="issuelinks"
     )
+    # None (not []) so list responses that don't request it omit the key
+    # instead of reading as "no attachments".
+    attachment: list[Attachment] | None = None
 
 
 class IssueBean(JiraModel):
