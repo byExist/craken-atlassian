@@ -10,11 +10,13 @@ repos:
 
   # pyright runs through uv so it resolves the project's deps and its strict
   # [tool.pyright] config; checks the whole package, not just changed files.
+  # FORCE_VERSION=latest keeps the checker in step with Pylance, which updates
+  # itself; the locked pyright package is only the launcher.
   - repo: local
     hooks:
       - id: pyright
         name: pyright (strict)
-        entry: uv run pyright
+        entry: env PYRIGHT_PYTHON_FORCE_VERSION=latest uv run pyright
         language: system
         types: [python]
         pass_filenames: false
