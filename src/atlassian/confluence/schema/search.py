@@ -1,6 +1,7 @@
 """Search schema (Confluence v1 API)."""
 
 from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.user import User
 
 
 class SearchResultContent(ConfluenceModel):
@@ -32,6 +33,7 @@ class SearchResultItem(ConfluenceModel):
 
     content: SearchResultContent | None = None
     space: SearchResultSpace | None = None
+    user: User | None = None
     title: str
     excerpt: str
 

@@ -78,17 +78,32 @@ def test_search_content_passes_cql_start_and_limit(confluence_api: MockServer):
     assert isinstance(result, SearchResults)
 
 
-def test_search_users_uses_user_search_path(confluence_api: MockServer):
+def test_search_users_uses_user_search_path_and_keeps_account_id(
+    confluence_api: MockServer,
+):
     confluence_api.add(
         "GET",
         "/wiki/rest/api/search/user",
-        json={"results": [], "start": 5, "limit": 25, "totalSize": 0},
+        json={
+            "results": [
+                {
+                    "title": "Alice",
+                    "excerpt": "",
+                    "user": {"accountId": "acc-1", "displayName": "Alice"},
+                }
+            ],
+            "start": 5,
+            "limit": 25,
+            "totalSize": 1,
+        },
     )
 
-    client.search_users("user.fullname~alice", start=5)
+    result = client.search_users("user.fullname~alice", start=5)
 
     assert confluence_api.last.url.params["cql"] == "user.fullname~alice"
     assert confluence_api.last.url.params["start"] == "5"
+    assert result.results[0].user is not None
+    assert result.results[0].user.account_id == "acc-1"
 
 
 def test_get_page_views_returns_content_views(confluence_api: MockServer):
