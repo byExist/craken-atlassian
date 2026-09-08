@@ -27,7 +27,13 @@ from atlassian.jira.schema.issue import (
     SearchAndReconcileResults,
     SearchResults,
 )
-from atlassian.jira.schema.field_meta import PageOfCreateMetaIssueTypeWithField
+from atlassian.jira.schema.field import JsonTypeBean
+from atlassian.jira.schema.field_meta import (
+    FieldCreateMetadata,
+    FieldMetadata,
+    IssueUpdateMetadata,
+    PageOfCreateMetaIssueTypeWithField,
+)
 from atlassian.jira.schema.issue_type_meta import (
     IssueTypeCreateMeta,
     PageOfCreateMetaIssueTypes,
@@ -383,6 +389,114 @@ def test_create_issue_passes_standard_fields(mocker: MockerFixture):
         priority="High",
         extra_fields={"customfield_10016": 3},
     )
+
+
+_TEXTAREA = JsonTypeBean(
+    type="string", custom="com.atlassian.jira.plugin.system.customfieldtypes:textarea"
+)
+_TEXTFIELD = JsonTypeBean(
+    type="string", custom="com.atlassian.jira.plugin.system.customfieldtypes:textfield"
+)
+
+
+def _create_field(field_id: str, schema: JsonTypeBean) -> FieldCreateMetadata:
+    return FieldCreateMetadata.model_validate(
+        {
+            "fieldId": field_id,
+            "key": field_id,
+            "name": field_id,
+            "required": False,
+            "schema": schema.model_dump(),
+        }
+    )
+
+
+def _edit_field(key: str, schema: JsonTypeBean) -> FieldMetadata:
+    return FieldMetadata.model_validate(
+        {"key": key, "name": key, "required": False, "schema": schema.model_dump()}
+    )
+
+
+def test_create_issue_converts_markdown_only_for_textarea_fields(
+    mocker: MockerFixture,
+):
+    mocker.patch.object(
+        client,
+        "get_issue_type_metadata",
+        return_value=PageOfCreateMetaIssueTypes(
+            issue_types=[IssueTypeCreateMeta(id="10000", name="Task")]
+        ),
+    )
+    # Two pages, so the loop has to follow ``total``.
+    pages = [
+        PageOfCreateMetaIssueTypeWithField(
+            fields=[_create_field("customfield_1", _TEXTAREA)], total=2
+        ),
+        PageOfCreateMetaIssueTypeWithField(
+            fields=[_create_field("customfield_2", _TEXTFIELD)], total=2
+        ),
+    ]
+    meta = mocker.patch.object(client, "get_create_field_metadata", side_effect=pages)
+    create = mocker.patch.object(
+        client, "create_issue", return_value=CreatedIssue(key="A-1")
+    )
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
+
+    tools.create_issue(
+        "ABC",
+        "T",
+        extra_fields={
+            "customfield_1": "# notes",
+            "customfield_2": "plain",
+            "customfield_9": "unknown field",
+            "customfield_10016": 5,
+        },
+    )
+
+    assert to_adf.call_args_list == [call("# notes")]
+    assert create.call_args.kwargs["extra_fields"] == {
+        "customfield_1": {"adf": 1},
+        "customfield_2": "plain",
+        "customfield_9": "unknown field",
+        "customfield_10016": 5,
+    }
+    assert [c.kwargs["start_at"] for c in meta.call_args_list] == [0, 1]
+
+
+def test_update_issue_converts_markdown_using_edit_metadata(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "get_edit_metadata",
+        return_value=IssueUpdateMetadata(
+            fields={
+                "environment": _edit_field(
+                    "environment", JsonTypeBean(type="string", system="environment")
+                ),
+                "customfield_2": _edit_field("customfield_2", _TEXTFIELD),
+            }
+        ),
+    )
+    update = mocker.patch.object(client, "update_issue")
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
+
+    tools.update_issue(
+        "A-1", extra_fields={"environment": "prod", "customfield_2": "plain"}
+    )
+
+    assert to_adf.call_args_list == [call("prod")]
+    assert update.call_args.kwargs["extra_fields"] == {
+        "environment": {"adf": 1},
+        "customfield_2": "plain",
+    }
+
+
+def test_update_issue_skips_metadata_without_string_extras(mocker: MockerFixture):
+    meta = mocker.patch.object(client, "get_edit_metadata")
+    mocker.patch.object(client, "update_issue")
+
+    tools.update_issue("A-1", extra_fields={"customfield_10016": 5})
+
+    meta.assert_not_called()
 
 
 def test_get_create_field_metadata_resolves_issue_type_name(mocker: MockerFixture):

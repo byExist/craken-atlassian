@@ -1,5 +1,6 @@
 """JIRA MCP tools — pure functions, registered by server.py."""
 
+from collections.abc import Callable
 from typing import Annotated, Any, Literal, TypeAlias
 
 from atlassian.markdown import parse, render
@@ -14,7 +15,7 @@ from atlassian.jira.schema.comment import PageOfComments
 from atlassian.jira.schema.common import IssueTypeDetails, IssueTypeWithStatus
 from atlassian.jira.schema.component import Component
 from atlassian.jira.schema.epic import Epic
-from atlassian.jira.schema.field import PageBeanField
+from atlassian.jira.schema.field import JsonTypeBean, PageBeanField
 from atlassian.jira.schema.field_meta import (
     IssueUpdateMetadata,
     PageOfCreateMetaIssueTypeWithField,
@@ -44,6 +45,12 @@ ProjectKey: TypeAlias = Annotated[str, Field(description="Project key, e.g. PROJ
 IssueKey: TypeAlias = Annotated[str, Field(description="Issue key, e.g. PROJ-123.")]
 AccountId: TypeAlias = Annotated[
     str, Field(description="User accountId (from search_users).")
+]
+ExtraFields: TypeAlias = Annotated[
+    dict[str, Any] | None,
+    Field(
+        description="Other fields by id, e.g. {'customfield_10016': 5}. Multi-line text (textarea) fields take Markdown."
+    ),
 ]
 ParentKey: TypeAlias = Annotated[
     str | None,
@@ -219,12 +226,7 @@ def create_issue(
         str | None,
         Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest."),
     ] = None,
-    extra_fields: Annotated[
-        dict[str, Any] | None,
-        Field(
-            description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."
-        ),
-    ] = None,
+    extra_fields: ExtraFields = None,
 ) -> str:
     """Create an issue; returns the issue key. Provide description inline or via from_file, not both."""
     if description and from_file:
@@ -240,7 +242,9 @@ def create_issue(
         parent_key=parent,
         due_date=due_date,
         priority=priority,
-        extra_fields=extra_fields,
+        extra_fields=_markdown_fields_to_adf(
+            extra_fields, lambda: _create_field_schemas(project_key, issue_type)
+        ),
     )
     return str(issue.key)
 
@@ -268,12 +272,7 @@ def update_issue(
         str | None,
         Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest."),
     ] = None,
-    extra_fields: Annotated[
-        dict[str, Any] | None,
-        Field(
-            description="Raw Jira fields for custom fields, e.g. {'customfield_10016': 5} for story points."
-        ),
-    ] = None,
+    extra_fields: ExtraFields = None,
 ) -> Ok:
     """Update an issue. Provide description inline or via from_file, not both."""
     if description and from_file:
@@ -288,7 +287,9 @@ def update_issue(
         assignee=assignee,
         due_date=due_date,
         priority=priority,
-        extra_fields=extra_fields,
+        extra_fields=_markdown_fields_to_adf(
+            extra_fields, lambda: _edit_field_schemas(issue_key)
+        ),
     )
     return "ok"
 
@@ -409,6 +410,53 @@ def get_create_field_metadata(
 def get_edit_field_metadata(issue_key: IssueKey) -> IssueUpdateMetadata:
     """Get the fields editable on an issue: which are required and each field's schema."""
     return client.get_edit_metadata(issue_key)
+
+
+def _takes_adf(schema: JsonTypeBean) -> bool:
+    # Per the PUT /issue docs: description, environment and textarea custom
+    # fields take ADF; textfield (single-line) custom fields take a string.
+    return schema.type == "string" and (
+        schema.system in ("description", "environment")
+        or (schema.custom or "").endswith(":textarea")
+    )
+
+
+def _create_field_schemas(project_key: str, issue_type: str) -> dict[str, JsonTypeBean]:
+    type_id = _issue_type_id(project_key, issue_type)
+    schemas: dict[str, JsonTypeBean] = {}
+    start = 0
+    while True:
+        page = client.get_create_field_metadata(
+            project_key, type_id, start_at=start, max_results=200
+        )
+        schemas.update({f.field_id: f.field_schema for f in page.fields})
+        start += len(page.fields)
+        if not page.fields or page.total is None or start >= page.total:
+            return schemas
+
+
+def _edit_field_schemas(issue_key: str) -> dict[str, JsonTypeBean]:
+    meta = client.get_edit_metadata(issue_key)
+    return {key: f.field_schema for key, f in meta.fields.items()}
+
+
+def _markdown_fields_to_adf(
+    extra: dict[str, Any] | None, schemas: Callable[[], dict[str, JsonTypeBean]]
+) -> dict[str, Any] | None:
+    """Convert Markdown strings in ``extra`` to ADF for the fields whose schema wants it.
+
+    Metadata is only fetched when a string value is present, so numeric or
+    structured extras cost no extra request.
+    """
+    if not extra or not any(isinstance(v, str) for v in extra.values()):
+        return extra
+    known = schemas()
+    return {
+        key: parse(value)
+        if isinstance(value, str) and key in known and _takes_adf(known[key])
+        else value
+        for key, value in extra.items()
+    }
 
 
 def list_issue_types() -> list[IssueTypeDetails]:
