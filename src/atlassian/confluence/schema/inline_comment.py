@@ -15,9 +15,10 @@ class InlineCommentProperties(ConfluenceModel):
 
 
 class InlineComment(ConfluenceModel):
-    """An inline comment on a page.
+    """An inline comment on a page, or a reply to one.
 
-    OpenAPI (v2): PageInlineCommentModel
+    OpenAPI (v2): PageInlineCommentModel / InlineCommentChildrenModel
+    (``parentCommentId`` is set only on replies)
     """
 
     id: str | None = None

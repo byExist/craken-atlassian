@@ -63,7 +63,11 @@ def test_get_current_user_expands_personal_space(confluence_api: MockServer):
 
 
 def test_search_content_passes_cql_start_and_limit(confluence_api: MockServer):
-    confluence_api.add("GET", "/wiki/rest/api/search", json={"results": [], "size": 0})
+    confluence_api.add(
+        "GET",
+        "/wiki/rest/api/search",
+        json={"results": [], "start": 20, "limit": 10, "totalSize": 0},
+    )
 
     result = client.search_content("type=page", start=20, limit=10)
 
@@ -75,7 +79,11 @@ def test_search_content_passes_cql_start_and_limit(confluence_api: MockServer):
 
 
 def test_search_users_uses_user_search_path(confluence_api: MockServer):
-    confluence_api.add("GET", "/wiki/rest/api/search/user", json={"results": []})
+    confluence_api.add(
+        "GET",
+        "/wiki/rest/api/search/user",
+        json={"results": [], "start": 5, "limit": 25, "totalSize": 0},
+    )
 
     client.search_users("user.fullname~alice", start=5)
 

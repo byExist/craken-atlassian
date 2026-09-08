@@ -4,18 +4,24 @@ from atlassian.confluence.schema.base import ConfluenceModel
 
 
 class SearchResultContent(ConfluenceModel):
-    """Minimal content reference in search results."""
+    """Minimal content reference in search results.
+
+    OpenAPI (v1): Content
+    """
 
     id: str | None = None
-    type: str | None = None
+    type: str
     title: str | None = None
 
 
 class SearchResultSpace(ConfluenceModel):
-    """Minimal space reference in search results."""
+    """Minimal space reference in search results.
 
-    key: str | None = None
-    name: str | None = None
+    OpenAPI (v1): Space
+    """
+
+    key: str
+    name: str
 
 
 class SearchResultItem(ConfluenceModel):
@@ -26,8 +32,8 @@ class SearchResultItem(ConfluenceModel):
 
     content: SearchResultContent | None = None
     space: SearchResultSpace | None = None
-    title: str | None = None
-    excerpt: str | None = None
+    title: str
+    excerpt: str
 
 
 class SearchResults(ConfluenceModel):
@@ -37,6 +43,6 @@ class SearchResults(ConfluenceModel):
     """
 
     results: list[SearchResultItem] = []
-    start: int | None = None
-    limit: int | None = None
-    total_size: int | None = None
+    start: int
+    limit: int
+    total_size: int

@@ -58,7 +58,7 @@ class CreatedIssue(JiraModel):
 class SearchResults(JiraModel):
     """Offset-based paginated issue search results.
 
-    Used by Agile API endpoints (e.g. GET /rest/agile/1.0/sprint/{id}/issue).
+    OpenAPI (jira-software): SearchResults — GET /rest/agile/1.0/sprint/{id}/issue response
     """
 
     issues: list[IssueBean] = []
