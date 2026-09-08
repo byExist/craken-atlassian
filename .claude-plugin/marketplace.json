@@ -1,0 +1,14 @@
+{
+  "name": "atlassian",
+  "owner": {
+    "name": "byExist"
+  },
+  "description": "Jira & Confluence in Claude — bodies as faithful Markdown, not flattened ADF",
+  "plugins": [
+    {
+      "name": "atlassian",
+      "source": "./",
+      "description": "Atlassian (Jira, Confluence) integration via MCP — bodies as faithful Markdown, not flattened ADF"
+    }
+  ]
+}

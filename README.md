@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/byExist/craken-atlassian/actions/workflows/ci.yml"><img src="https://github.com/byExist/craken-atlassian/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/byExist/craken"><img src="https://img.shields.io/badge/Claude_Code-plugin-da7756" alt="Claude Code plugin"></a>
+  <a href="https://github.com/byExist/craken-atlassian"><img src="https://img.shields.io/badge/Claude_Code-plugin-da7756" alt="Claude Code plugin"></a>
   <img src="https://img.shields.io/badge/python-3.13+-3776AB?logo=python&logoColor=white" alt="Python 3.13+">
 </p>
 
@@ -31,15 +31,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS / Linux — see the uv
 ```
 
 ```bash
-/plugin marketplace add byExist/craken
-/plugin install atlassian@craken
+/plugin marketplace add byExist/craken-atlassian
+/plugin install atlassian@atlassian
 ```
 
 **Installed disabled** — it connects to your account, so you opt in by enabling it (`/plugin` menu, or `claude plugin enable atlassian`), which prompts for the settings below. The token is stored in your OS keychain, not `settings.json`; reconfigure anytime with `/plugin config atlassian`.
 
 | Setting | Description |
 | --- | --- |
-| Atlassian site URL | e.g. `https://your-company.atlassian.net` |
+| Atlassian domain | e.g. `your-company.atlassian.net` |
 | Atlassian account email | Account that owns the API token |
 | Atlassian API token | Create one at [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens) |
 | Enable write operations | Off by default — read-only. On exposes create / update / delete; actions your account can't perform are still marked **NOT PERMITTED**. |
