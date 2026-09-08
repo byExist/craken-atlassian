@@ -1,8 +1,9 @@
 """Tests for atlassian.confluence.client — request shaping and response parsing.
 
-Confluence mixes v1 (/wiki/rest/api) and v2 (/wiki/api/v2) endpoints, extracts
-ADF bodies out of the nested ``body.atlas_doc_format.value`` JSON string, and
-pulls pagination cursors out of ``_links.next``. These behaviours are the focus.
+Confluence mixes v1 (/wiki/rest/api) and v2 (/wiki/api/v2) endpoints. The
+schema unwraps ``body.atlas_doc_format.value`` and lifts the cursor out of
+``_links.next``; these tests check each call still lands on the right endpoint
+with the right parameters and hands the raw response to the right model.
 """
 
 import json

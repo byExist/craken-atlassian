@@ -17,7 +17,6 @@ ATLASSIAN_TOKEN - Atlassian API token
 
 import json
 from typing import Any
-from urllib.parse import parse_qs, urlparse
 
 import httpx
 
@@ -25,7 +24,7 @@ from atlassian.hooks import error_hook
 from atlassian.config import get_auth
 from atlassian.download import Download
 from atlassian.confluence.schema.adf import ADF
-from atlassian.confluence.schema.ancestor import Ancestor, MultiEntityResultAncestor
+from atlassian.confluence.schema.ancestor import MultiEntityResultAncestor
 from atlassian.confluence.schema.analytics import ContentViews
 from atlassian.confluence.schema.attachment import (
     Attachment,
@@ -49,7 +48,6 @@ from atlassian.confluence.schema.task import MultiEntityResultTask, Task
 from atlassian.confluence.schema.user import User
 from atlassian.confluence.schema.version import (
     MultiEntityResultPageVersion,
-    PageVersion,
 )
 
 # ---------------------------------------------------------------------------
@@ -72,62 +70,6 @@ def _get_client() -> httpx.Client:
             event_hooks={"response": [error_hook("Confluence", "space")]},
         )
     return _client
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _extract_cursor(data: dict[str, Any]) -> str | None:
-    """Extract cursor from ``_links.next`` URL in v2 API response."""
-    links: dict[str, Any] = data.get("_links") or {}
-    next_url: str | None = links.get("next")
-    if not next_url:
-        return None
-    parsed = urlparse(next_url)
-    cursors: list[str] | None = parse_qs(parsed.query).get("cursor")
-    return cursors[0] if cursors else None
-
-
-def _extract_adf_body(data: dict[str, Any]) -> dict[str, Any] | None:
-    """Extract ADF dict from nested v2 body structure.
-
-    v2 API returns: ``body.atlas_doc_format.value`` (JSON string).
-    """
-    body: dict[str, Any] | None = data.get("body")
-    if not body:
-        return None
-    adf_format: dict[str, Any] | None = body.get("atlas_doc_format")
-    if not adf_format:
-        return None
-    value: str | dict[str, Any] | None = adf_format.get("value")
-    if not value:
-        return None
-    return json.loads(value) if isinstance(value, str) else value
-
-
-def _parse_page(data: dict[str, Any]) -> Page:
-    """Parse a page dict, extracting ADF body."""
-    adf = _extract_adf_body(data)
-    data["body"] = adf
-    return Page.model_validate(data)
-
-
-def _parse_page_list(data: dict[str, Any]) -> MultiEntityResultPage:
-    """Parse paginated page list, injecting cursor."""
-    pages = [_parse_page(item) for item in data.get("results", [])]
-    return MultiEntityResultPage(
-        results=pages,
-        cursor=_extract_cursor(data),
-    )
-
-
-def _parse_blog_post(data: dict[str, Any]) -> BlogPost:
-    """Parse a blog post dict, extracting ADF body."""
-    adf = _extract_adf_body(data)
-    data["body"] = adf
-    return BlogPost.model_validate(data)
 
 
 # ---------------------------------------------------------------------------
@@ -213,10 +155,7 @@ def list_spaces(
         params["cursor"] = cursor
     resp = _get_client().get("/wiki/api/v2/spaces", params=params)
     resp.raise_for_status()
-    data = resp.json()
-    result = MultiEntityResultSpace.model_validate(data)
-    result.cursor = _extract_cursor(data)
-    return result
+    return MultiEntityResultSpace.model_validate(resp.json())
 
 
 def get_space(space_id: str) -> Space:
@@ -257,7 +196,7 @@ def list_pages(
         params=params,
     )
     resp.raise_for_status()
-    return _parse_page_list(resp.json())
+    return MultiEntityResultPage.model_validate(resp.json())
 
 
 def get_page(page_id: str) -> Page:
@@ -266,7 +205,7 @@ def get_page(page_id: str) -> Page:
         params={"body-format": "atlas_doc_format"},
     )
     resp.raise_for_status()
-    return _parse_page(resp.json())
+    return Page.model_validate(resp.json())
 
 
 def get_page_children(
@@ -283,10 +222,7 @@ def get_page_children(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    result = MultiEntityResultChildPage.model_validate(data)
-    result.cursor = _extract_cursor(data)
-    return result
+    return MultiEntityResultChildPage.model_validate(resp.json())
 
 
 def get_page_descendants(
@@ -306,10 +242,7 @@ def get_page_descendants(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    result = MultiEntityResultChildPage.model_validate(data)
-    result.cursor = _extract_cursor(data)
-    return result
+    return MultiEntityResultChildPage.model_validate(resp.json())
 
 
 def get_page_versions(
@@ -326,20 +259,13 @@ def get_page_versions(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    results = [PageVersion.model_validate(item) for item in data.get("results", [])]
-    return MultiEntityResultPageVersion(
-        results=results,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultPageVersion.model_validate(resp.json())
 
 
 def get_ancestors(page_id: str) -> MultiEntityResultAncestor:
     resp = _get_client().get(f"/wiki/api/v2/pages/{page_id}/ancestors")
     resp.raise_for_status()
-    data = resp.json()
-    results = [Ancestor.model_validate(item) for item in data.get("results", [])]
-    return MultiEntityResultAncestor(results=results)
+    return MultiEntityResultAncestor.model_validate(resp.json())
 
 
 def get_comments(
@@ -359,16 +285,7 @@ def get_comments(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    comments: list[Comment] = []
-    for item in data.get("results", []):
-        adf = _extract_adf_body(item)
-        item["body"] = adf
-        comments.append(Comment.model_validate(item))
-    return MultiEntityResultComment(
-        results=comments,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultComment.model_validate(resp.json())
 
 
 def get_comment_children(
@@ -388,16 +305,7 @@ def get_comment_children(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    comments: list[Comment] = []
-    for item in data.get("results", []):
-        adf = _extract_adf_body(item)
-        item["body"] = adf
-        comments.append(Comment.model_validate(item))
-    return MultiEntityResultComment(
-        results=comments,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultComment.model_validate(resp.json())
 
 
 def get_inline_comments(
@@ -417,16 +325,7 @@ def get_inline_comments(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    comments: list[InlineComment] = []
-    for item in data.get("results", []):
-        adf = _extract_adf_body(item)
-        item["body"] = adf
-        comments.append(InlineComment.model_validate(item))
-    return MultiEntityResultInlineComment(
-        results=comments,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultInlineComment.model_validate(resp.json())
 
 
 def get_inline_comment_children(
@@ -446,16 +345,7 @@ def get_inline_comment_children(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    comments: list[InlineComment] = []
-    for item in data.get("results", []):
-        adf = _extract_adf_body(item)
-        item["body"] = adf
-        comments.append(InlineComment.model_validate(item))
-    return MultiEntityResultInlineComment(
-        results=comments,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultInlineComment.model_validate(resp.json())
 
 
 def get_labels(
@@ -472,10 +362,7 @@ def get_labels(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    result = MultiEntityResultLabel.model_validate(data)
-    result.cursor = _extract_cursor(data)
-    return result
+    return MultiEntityResultLabel.model_validate(resp.json())
 
 
 def get_attachments(
@@ -492,12 +379,7 @@ def get_attachments(
         params=params,
     )
     resp.raise_for_status()
-    data = resp.json()
-    results = [Attachment.model_validate(item) for item in data.get("results", [])]
-    return MultiEntityResultAttachment(
-        results=results,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultAttachment.model_validate(resp.json())
 
 
 def get_likes_count(page_id: str) -> int:
@@ -519,12 +401,7 @@ def list_blog_posts(
         params["cursor"] = cursor
     resp = _get_client().get("/wiki/api/v2/blogposts", params=params)
     resp.raise_for_status()
-    data = resp.json()
-    results = [_parse_blog_post(item) for item in data.get("results", [])]
-    return MultiEntityResultBlogPost(
-        results=results,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultBlogPost.model_validate(resp.json())
 
 
 def get_blog_post(blog_post_id: str) -> BlogPost:
@@ -533,7 +410,7 @@ def get_blog_post(blog_post_id: str) -> BlogPost:
         params={"body-format": "atlas_doc_format"},
     )
     resp.raise_for_status()
-    return _parse_blog_post(resp.json())
+    return BlogPost.model_validate(resp.json())
 
 
 def list_tasks(
@@ -555,16 +432,7 @@ def list_tasks(
         params["cursor"] = cursor
     resp = _get_client().get("/wiki/api/v2/tasks", params=params)
     resp.raise_for_status()
-    data = resp.json()
-    tasks: list[Task] = []
-    for item in data.get("results", []):
-        adf = _extract_adf_body(item)
-        item["body"] = adf
-        tasks.append(Task.model_validate(item))
-    return MultiEntityResultTask(
-        results=tasks,
-        cursor=_extract_cursor(data),
-    )
+    return MultiEntityResultTask.model_validate(resp.json())
 
 
 # ---------------------------------------------------------------------------
@@ -594,7 +462,7 @@ def create_page(
         payload["parentId"] = parent_id
     resp = _get_client().post("/wiki/api/v2/pages", json=payload)
     resp.raise_for_status()
-    return _parse_page(resp.json())
+    return Page.model_validate(resp.json())
 
 
 def update_page(
@@ -623,7 +491,7 @@ def update_page(
         json=payload,
     )
     resp.raise_for_status()
-    return _parse_page(resp.json())
+    return Page.model_validate(resp.json())
 
 
 def delete_page(page_id: str) -> None:
@@ -641,10 +509,7 @@ def add_comment(page_id: str, body: ADF) -> Comment:
     }
     resp = _get_client().post("/wiki/api/v2/footer-comments", json=payload)
     resp.raise_for_status()
-    data = resp.json()
-    adf = _extract_adf_body(data)
-    data["body"] = adf
-    return Comment.model_validate(data)
+    return Comment.model_validate(resp.json())
 
 
 def get_comment_version(comment_id: str) -> int:
@@ -675,10 +540,7 @@ def edit_comment(
         json=payload,
     )
     resp.raise_for_status()
-    data = resp.json()
-    adf = _extract_adf_body(data)
-    data["body"] = adf
-    return Comment.model_validate(data)
+    return Comment.model_validate(resp.json())
 
 
 def delete_comment(comment_id: str) -> None:
@@ -702,10 +564,7 @@ def reply_to_comment(
     }
     resp = _get_client().post("/wiki/api/v2/footer-comments", json=payload)
     resp.raise_for_status()
-    data = resp.json()
-    adf = _extract_adf_body(data)
-    data["body"] = adf
-    return Comment.model_validate(data)
+    return Comment.model_validate(resp.json())
 
 
 def create_inline_comment(
@@ -731,10 +590,7 @@ def create_inline_comment(
         payload["inlineCommentProperties"] = props
     resp = _get_client().post("/wiki/api/v2/inline-comments", json=payload)
     resp.raise_for_status()
-    data = resp.json()
-    adf_body = _extract_adf_body(data)
-    data["body"] = adf_body
-    return InlineComment.model_validate(data)
+    return InlineComment.model_validate(resp.json())
 
 
 def resolve_inline_comment(comment_id: str) -> InlineComment:
@@ -755,10 +611,7 @@ def resolve_inline_comment(comment_id: str) -> InlineComment:
         json=payload,
     )
     resp.raise_for_status()
-    data = resp.json()
-    adf_body = _extract_adf_body(data)
-    data["body"] = adf_body
-    return InlineComment.model_validate(data)
+    return InlineComment.model_validate(resp.json())
 
 
 def delete_inline_comment(comment_id: str) -> None:
@@ -790,7 +643,7 @@ def create_blog_post(
         }
     resp = _get_client().post("/wiki/api/v2/blogposts", json=payload)
     resp.raise_for_status()
-    return _parse_blog_post(resp.json())
+    return BlogPost.model_validate(resp.json())
 
 
 def update_blog_post(
@@ -817,7 +670,7 @@ def update_blog_post(
         json=payload,
     )
     resp.raise_for_status()
-    return _parse_blog_post(resp.json())
+    return BlogPost.model_validate(resp.json())
 
 
 def delete_blog_post(blog_post_id: str) -> None:
@@ -832,10 +685,7 @@ def update_task(task_id: str, status: str) -> Task:
         json=payload,
     )
     resp.raise_for_status()
-    data = resp.json()
-    adf = _extract_adf_body(data)
-    data["body"] = adf
-    return Task.model_validate(data)
+    return Task.model_validate(resp.json())
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 """Page schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.adf import ADF
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.adf import Body
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class Version(ConfluenceModel):
@@ -27,7 +27,7 @@ class Page(ConfluenceModel):
     space_id: str | None = None
     parent_id: str | None = None
     version: Version | None = None
-    body: ADF | str | None = None
+    body: Body = None
 
 
 class ChildPage(ConfluenceModel):
@@ -43,21 +43,19 @@ class ChildPage(ConfluenceModel):
     child_position: int | None = None
 
 
-class MultiEntityResultPage(ConfluenceModel):
+class MultiEntityResultPage(CursorPage):
     """Cursor-paginated page list.
 
     OpenAPI (v2): MultiEntityResult<Page>
     """
 
     results: list[Page] = []
-    cursor: str | None = None
 
 
-class MultiEntityResultChildPage(ConfluenceModel):
+class MultiEntityResultChildPage(CursorPage):
     """Cursor-paginated child page list.
 
     OpenAPI (v2): MultiEntityResult<ChildPage>
     """
 
     results: list[ChildPage] = []
-    cursor: str | None = None

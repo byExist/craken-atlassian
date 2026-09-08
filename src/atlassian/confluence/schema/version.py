@@ -1,6 +1,6 @@
 """Page version schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class PageVersion(ConfluenceModel):
@@ -15,11 +15,10 @@ class PageVersion(ConfluenceModel):
     minor_edit: bool | None = None
 
 
-class MultiEntityResultPageVersion(ConfluenceModel):
+class MultiEntityResultPageVersion(CursorPage):
     """Cursor-paginated page version list.
 
     OpenAPI (v2): MultiEntityResult<Version>
     """
 
     results: list[PageVersion] = []
-    cursor: str | None = None

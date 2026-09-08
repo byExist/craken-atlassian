@@ -1,6 +1,6 @@
 """Attachment schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class Attachment(ConfluenceModel):
@@ -18,11 +18,10 @@ class Attachment(ConfluenceModel):
     comment: str | None = None
 
 
-class MultiEntityResultAttachment(ConfluenceModel):
+class MultiEntityResultAttachment(CursorPage):
     """Cursor-paginated attachment list.
 
     OpenAPI (v2): MultiEntityResult<AttachmentBulk>
     """
 
     results: list[Attachment] = []
-    cursor: str | None = None

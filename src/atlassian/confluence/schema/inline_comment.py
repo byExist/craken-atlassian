@@ -1,7 +1,7 @@
 """Inline comment schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.adf import ADF
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.adf import Body
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class InlineCommentProperties(ConfluenceModel):
@@ -25,15 +25,14 @@ class InlineComment(ConfluenceModel):
     title: str | None = None
     parent_comment_id: str | None = None
     resolution_status: str | None = None
-    body: ADF | str | None = None
+    body: Body = None
     properties: InlineCommentProperties | None = None
 
 
-class MultiEntityResultInlineComment(ConfluenceModel):
+class MultiEntityResultInlineComment(CursorPage):
     """Cursor-paginated inline comment list.
 
     OpenAPI (v2): MultiEntityResult<PageInlineCommentModel>
     """
 
     results: list[InlineComment] = []
-    cursor: str | None = None

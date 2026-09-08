@@ -1,7 +1,7 @@
 """Task schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.adf import ADF
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.adf import Body
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class Task(ConfluenceModel):
@@ -12,14 +12,13 @@ class Task(ConfluenceModel):
 
     id: str | None = None
     status: str | None = None
-    body: ADF | str | None = None
+    body: Body = None
 
 
-class MultiEntityResultTask(ConfluenceModel):
+class MultiEntityResultTask(CursorPage):
     """Cursor-paginated task list.
 
     OpenAPI (v2): MultiEntityResult<Task>
     """
 
     results: list[Task] = []
-    cursor: str | None = None

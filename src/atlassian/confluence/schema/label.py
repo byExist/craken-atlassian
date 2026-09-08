@@ -1,6 +1,6 @@
 """Label schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class Label(ConfluenceModel):
@@ -12,11 +12,10 @@ class Label(ConfluenceModel):
     name: str | None = None
 
 
-class MultiEntityResultLabel(ConfluenceModel):
+class MultiEntityResultLabel(CursorPage):
     """Cursor-paginated label list.
 
     OpenAPI (v2): MultiEntityResult<Label>
     """
 
     results: list[Label] = []
-    cursor: str | None = None

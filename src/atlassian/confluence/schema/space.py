@@ -1,6 +1,6 @@
 """Space schema (Confluence v2 API)."""
 
-from atlassian.confluence.schema.base import ConfluenceModel
+from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 
 
 class Space(ConfluenceModel):
@@ -16,11 +16,10 @@ class Space(ConfluenceModel):
     status: str | None = None
 
 
-class MultiEntityResultSpace(ConfluenceModel):
+class MultiEntityResultSpace(CursorPage):
     """Cursor-paginated space list.
 
     OpenAPI (v2): MultiEntityResult<Space> -- GET /wiki/api/v2/spaces response
     """
 
     results: list[Space] = []
-    cursor: str | None = None
