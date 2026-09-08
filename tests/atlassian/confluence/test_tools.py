@@ -188,10 +188,10 @@ def test_get_tasks_converts_bodies(mocker: MockerFixture):
     assert tools.get_tasks("p1").results[0].body == "md"
 
 
-def test_get_likes_wraps_count(mocker: MockerFixture):
+def test_get_likes_returns_count(mocker: MockerFixture):
     mocker.patch.object(client, "get_likes_count", return_value=12)
 
-    assert tools.get_likes("p1") == {"count": 12}
+    assert tools.get_likes("p1") == 12
 
 
 # ---------------------------------------------------------------------------

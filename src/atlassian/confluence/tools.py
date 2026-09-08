@@ -204,9 +204,9 @@ def get_page_views(page_id: PageId) -> ContentViews:
     return client.get_page_views(page_id)
 
 
-def get_likes(page_id: PageId) -> dict[str, int]:
+def get_likes(page_id: PageId) -> int:
     """Get a page's like count."""
-    return {"count": client.get_likes_count(page_id)}
+    return client.get_likes_count(page_id)
 
 
 def get_attachments(
