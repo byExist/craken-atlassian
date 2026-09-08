@@ -541,6 +541,38 @@ def test_assign_issue_unassigns_with_null(jira_api: MockServer):
     assert jira_api.body(jira_api.last) == {"accountId": None}
 
 
+def test_get_transitions_expands_screen_fields(jira_api: MockServer):
+    jira_api.add(
+        "GET",
+        "/rest/api/3/issue/A-1/transitions",
+        json={
+            "transitions": [
+                {
+                    "id": "581",
+                    "name": "Closed",
+                    "hasScreen": True,
+                    "fields": {
+                        "resolution": {
+                            "key": "resolution",
+                            "name": "Resolution",
+                            "required": True,
+                            "schema": {"type": "resolution", "system": "resolution"},
+                        }
+                    },
+                }
+            ]
+        },
+    )
+
+    transitions = client.get_transitions("A-1")
+
+    assert jira_api.last.url.params["expand"] == "transitions.fields"
+    closed = transitions.transitions[0]
+    assert closed.has_screen is True
+    assert closed.fields is not None
+    assert closed.fields["resolution"].required is True
+
+
 def test_transition_issue_posts_transition_id(jira_api: MockServer):
     jira_api.add("POST", "/rest/api/3/issue/ABC-1/transitions", json={})
 

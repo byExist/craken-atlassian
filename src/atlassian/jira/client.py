@@ -104,7 +104,10 @@ def get_issue(issue_key: str, fields: list[str] | None = None) -> IssueBean:
 
 
 def get_transitions(issue_key: str) -> Transitions:
-    resp = _get_client().get(f"/rest/api/3/issue/{issue_key}/transitions")
+    resp = _get_client().get(
+        f"/rest/api/3/issue/{issue_key}/transitions",
+        params={"expand": "transitions.fields"},
+    )
     resp.raise_for_status()
     return Transitions.model_validate(resp.json())
 

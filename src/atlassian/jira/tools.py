@@ -500,7 +500,7 @@ def upload_attachment(
 
 
 def get_transitions(issue_key: IssueKey) -> Transitions:
-    """Get an issue's available status transitions."""
+    """Get an issue's available status transitions, with each transition screen's fields (required flags and schemas)."""
     return client.get_transitions(issue_key)
 
 
