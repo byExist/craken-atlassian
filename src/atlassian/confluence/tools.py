@@ -3,6 +3,7 @@
 from typing import Annotated, Literal, TypeAlias
 
 from atlassian.markdown import parse, render
+from atlassian.params import Limit, Offset, Ok, Plain
 from pydantic import Field
 
 from atlassian.confluence import client
@@ -35,15 +36,8 @@ PageId: TypeAlias = Annotated[str, Field(description="Page id.")]
 CommentId: TypeAlias = Annotated[str, Field(description="Comment id.")]
 
 # Pagination
-Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
 Cursor: TypeAlias = Annotated[
     str | None, Field(description="Pagination cursor from a prior result.")
-]
-Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based).")]
-
-# Output
-Plain: TypeAlias = Annotated[
-    bool, Field(description="Set false to keep ADF-only features for editing.")
 ]
 
 
@@ -254,7 +248,7 @@ def update_page(
             "since (avoids clobbering)."
         ),
     ] = None,
-) -> str:
+) -> Ok:
     """Update a page. Provide content inline or via from_file, not both."""
     if content and from_file:
         raise ValueError("provide either content or from_file, not both")
@@ -275,7 +269,7 @@ def update_page(
         body=parse(content),
         version_number=(current_version or 0) + 1,
     )
-    return "OK"
+    return "ok"
 
 
 # --- Blog post ---
@@ -351,7 +345,7 @@ def update_blog_post(
             "since (avoids clobbering)."
         ),
     ] = None,
-) -> str:
+) -> Ok:
     """Update a blog post. Provide content inline or via from_file, not both."""
     if content and from_file:
         raise ValueError("provide either content or from_file, not both")
@@ -372,15 +366,15 @@ def update_blog_post(
         body=parse(content),
         version_number=(current_version or 0) + 1,
     )
-    return "OK"
+    return "ok"
 
 
 def delete_blog_post(
     blog_post_id: Annotated[str, Field(description="Blog post id.")],
-) -> str:
+) -> Ok:
     """Delete a blog post."""
     client.delete_blog_post(blog_post_id)
-    return "OK"
+    return "ok"
 
 
 # --- Comment ---
@@ -408,7 +402,7 @@ def add_comment(
 def edit_comment(
     comment_id: CommentId,
     content: Annotated[str, Field(description="Markdown.")],
-) -> str:
+) -> Ok:
     """Edit a footer comment."""
     version = client.get_comment_version(comment_id)
     client.edit_comment(
@@ -416,13 +410,13 @@ def edit_comment(
         body=parse(content),
         version_number=version + 1,
     )
-    return "OK"
+    return "ok"
 
 
-def delete_comment(comment_id: CommentId) -> str:
+def delete_comment(comment_id: CommentId) -> Ok:
     """Delete a footer comment."""
     client.delete_comment(comment_id)
-    return "OK"
+    return "ok"
 
 
 def reply_to_comment(
@@ -468,7 +462,7 @@ def create_inline_comment(
     inline_original_selection: Annotated[
         str | None, Field(description="The highlighted text to anchor the comment to.")
     ] = None,
-) -> str:
+) -> Ok:
     """Create an inline comment anchored to highlighted text on a page."""
     client.create_inline_comment(
         page_id,
@@ -476,19 +470,19 @@ def create_inline_comment(
         inline_marker_ref=inline_marker_ref,
         inline_original_selection=inline_original_selection,
     )
-    return "OK"
+    return "ok"
 
 
-def resolve_inline_comment(comment_id: CommentId) -> str:
+def resolve_inline_comment(comment_id: CommentId) -> Ok:
     """Resolve an inline comment."""
     client.resolve_inline_comment(comment_id)
-    return "OK"
+    return "ok"
 
 
-def delete_inline_comment(comment_id: CommentId) -> str:
+def delete_inline_comment(comment_id: CommentId) -> Ok:
     """Delete an inline comment."""
     client.delete_inline_comment(comment_id)
-    return "OK"
+    return "ok"
 
 
 def get_inline_comment_replies(
@@ -514,19 +508,19 @@ def get_labels(
 def add_label(
     page_id: PageId,
     label: Annotated[str, Field(description="Label name.")],
-) -> str:
+) -> Ok:
     """Add a label to a page."""
     client.add_label(page_id, label)
-    return "OK"
+    return "ok"
 
 
 def remove_label(
     page_id: PageId,
     label: Annotated[str, Field(description="Label name.")],
-) -> str:
+) -> Ok:
     """Remove a label from a page."""
     client.remove_label(page_id, label)
-    return "OK"
+    return "ok"
 
 
 # --- Attachment ---
@@ -536,28 +530,28 @@ def upload_attachment(
     page_id: PageId,
     file_path: Annotated[str, Field(description="Absolute path to the file.")],
     comment: Annotated[str | None, Field(description="Optional comment.")] = None,
-) -> str:
+) -> Ok:
     """Attach a local file to a page."""
     data, filename = read_bytes(file_path)
     client.upload_attachment(page_id, filename=filename, data=data, comment=comment)
-    return "OK"
+    return "ok"
 
 
 def delete_attachment(
     attachment_id: Annotated[str, Field(description="Attachment id.")],
-) -> str:
+) -> Ok:
     """Delete an attachment."""
     client.delete_attachment(attachment_id)
-    return "OK"
+    return "ok"
 
 
 # --- Page management ---
 
 
-def delete_page(page_id: PageId) -> str:
+def delete_page(page_id: PageId) -> Ok:
     """Delete a page."""
     client.delete_page(page_id)
-    return "OK"
+    return "ok"
 
 
 def move_page(
@@ -567,10 +561,10 @@ def move_page(
         Field(description="Placement relative to target."),
     ],
     target_id: Annotated[str, Field(description="Target page id.")],
-) -> str:
+) -> Ok:
     """Move a page in the page tree."""
     client.move_page(page_id, position, target_id)
-    return "OK"
+    return "ok"
 
 
 def copy_page(
@@ -588,7 +582,7 @@ def copy_page(
     title: Annotated[
         str | None, Field(description="Title for the copy; omit to keep the original.")
     ] = None,
-) -> str:
+) -> Ok:
     """Copy a page (with attachments and labels) to a new location."""
     client.copy_page(
         page_id,
@@ -596,7 +590,7 @@ def copy_page(
         destination_value=destination_value,
         title=title,
     )
-    return "OK"
+    return "ok"
 
 
 def restore_page_version(
@@ -607,14 +601,14 @@ def restore_page_version(
     message: Annotated[
         str | None, Field(description="Optional restore message.")
     ] = None,
-) -> str:
+) -> Ok:
     """Restore a page to a previous version."""
     client.restore_page_version(
         page_id,
         version_number,
         message=message or f"Restored to version {version_number}",
     )
-    return "OK"
+    return "ok"
 
 
 # --- Task ---
@@ -644,7 +638,7 @@ def update_task(
     status: Annotated[
         Literal["complete", "incomplete"], Field(description="New status.")
     ],
-) -> str:
+) -> Ok:
     """Update a task's status."""
     client.update_task(task_id, status)
-    return "OK"
+    return "ok"

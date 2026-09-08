@@ -3,6 +3,7 @@
 from typing import Annotated, Any, Literal, TypeAlias
 
 from atlassian.markdown import parse, render
+from atlassian.params import Limit, Offset, Ok, Plain
 from pydantic import Field
 
 from atlassian.jira import client
@@ -50,15 +51,6 @@ ParentKey: TypeAlias = Annotated[
     ),
 ]
 
-# Pagination
-Limit: TypeAlias = Annotated[int, Field(description="Max results.")]
-Offset: TypeAlias = Annotated[int, Field(description="Pagination offset (0-based).")]
-
-# Output
-Plain: TypeAlias = Annotated[
-    bool, Field(description="Set false to keep ADF-only features for editing.")
-]
-Ok: TypeAlias = Literal["ok"]
 
 # Reused field descriptions
 _TIME_SPENT = 'Time spent, e.g. "3h 20m" (#d/#h/#m).'

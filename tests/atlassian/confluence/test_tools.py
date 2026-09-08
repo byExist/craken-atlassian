@@ -3,7 +3,7 @@
 ``client`` and the marklas seams in ``atlassian.markdown`` are patched with ``mocker`` so the
 tool's own logic is exercised: body stripping on lists, Markdown<->ADF
 conversion, optimistic-lock version handling on updates, attachment file
-reads, and "OK" returns.
+reads, and "ok" acknowledgements.
 """
 
 from collections.abc import Callable
@@ -225,14 +225,14 @@ def update_page_at_v5(mocker: MockerFixture) -> MagicMock:
 
 
 def test_update_page_increments_version(update_page_at_v5: MagicMock):
-    assert tools.update_page("p1", "T", content="new") == "OK"
+    assert tools.update_page("p1", "T", content="new") == "ok"
     assert update_page_at_v5.call_args == call(
         "p1", "T", body={"adf": 1}, version_number=6
     )
 
 
 def test_update_page_accepts_matching_expected_version(update_page_at_v5: MagicMock):
-    assert tools.update_page("p1", "T", content="new", expected_version=5) == "OK"
+    assert tools.update_page("p1", "T", content="new", expected_version=5) == "ok"
 
 
 def test_update_page_rejects_stale_expected_version(update_page_at_v5: MagicMock):
@@ -260,7 +260,7 @@ def test_update_blog_post_increments_version(mocker: MockerFixture):
     mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
     update = mocker.patch.object(client, "update_blog_post")
 
-    assert tools.update_blog_post("b1", "T", content="new") == "OK"
+    assert tools.update_blog_post("b1", "T", content="new") == "ok"
     assert update.call_args == call("b1", "T", body={"adf": 1}, version_number=3)
 
 
@@ -287,7 +287,7 @@ def test_edit_comment_bumps_fetched_version(mocker: MockerFixture):
     edit = mocker.patch.object(client, "edit_comment")
     mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
-    assert tools.edit_comment("c1", "updated") == "OK"
+    assert tools.edit_comment("c1", "updated") == "ok"
     assert edit.call_args == call("c1", body={"adf": 1}, version_number=8)
 
 
@@ -301,7 +301,7 @@ def test_upload_attachment_reads_file(mocker: MockerFixture, tmp_path: Path):
     f.write_bytes(b"file-bytes")
     upload = mocker.patch.object(client, "upload_attachment")
 
-    assert tools.upload_attachment("p1", str(f), comment="c") == "OK"
+    assert tools.upload_attachment("p1", str(f), comment="c") == "ok"
     assert upload.call_args == call(
         "p1", filename="f.bin", data=b"file-bytes", comment="c"
     )
@@ -330,7 +330,7 @@ def test_restore_page_version_defaults_message(mocker: MockerFixture):
 
 
 # ---------------------------------------------------------------------------
-# Write tools that return "OK"
+# Write tools that return "ok"
 # ---------------------------------------------------------------------------
 
 
@@ -356,7 +356,7 @@ def test_write_tools_return_ok(
 ):
     client_mock = mocker.patch.object(client, client_attr, return_value=None)
 
-    assert invoke() == "OK"
+    assert invoke() == "ok"
     client_mock.assert_called_once()
 
 
@@ -478,7 +478,7 @@ def test_update_page_reads_from_file(mocker: MockerFixture, tmp_path: Path):
     mocker.patch.object(client, "update_page")
     to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
-    assert tools.update_page("p1", "T", from_file=str(f)) == "OK"
+    assert tools.update_page("p1", "T", from_file=str(f)) == "ok"
     assert to_adf.call_args == call("disk body")
 
 
@@ -498,7 +498,7 @@ def test_update_blog_post_reads_from_file(mocker: MockerFixture, tmp_path: Path)
     mocker.patch.object(client, "update_blog_post")
     to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
-    assert tools.update_blog_post("b1", "T", from_file=str(f)) == "OK"
+    assert tools.update_blog_post("b1", "T", from_file=str(f)) == "ok"
     assert to_adf.call_args == call("disk body")
 
 
