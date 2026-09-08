@@ -189,6 +189,31 @@ def test_get_issue_passes_fields_to_client(mocker: MockerFixture):
     )
 
 
+def test_get_issue_renders_adf_documents_among_extra_fields(mocker: MockerFixture):
+    issue = IssueBean(
+        key="A-1",
+        fields=JiraIssueFields.model_validate(
+            {
+                "customfield_1": {"type": "doc", "version": 1, "content": []},
+                "customfield_2": {"accountId": "acc-1"},
+                "customfield_3": "plain",
+            }
+        ),
+    )
+    mocker.patch.object(client, "get_issue", return_value=issue)
+    to_md = mocker.patch.object(markdown, "to_md", return_value="md")
+
+    out = tools.get_issue("A-1", fields=["customfield_1"], plain=False)
+
+    assert to_md.call_args_list == [
+        call({"type": "doc", "version": 1, "content": []}, plain=False)
+    ]
+    dumped = out.model_dump(by_alias=True)["fields"]
+    assert dumped["customfield_1"] == "md"
+    assert dumped["customfield_2"] == {"accountId": "acc-1"}
+    assert dumped["customfield_3"] == "plain"
+
+
 def test_get_comments_converts_bodies(mocker: MockerFixture):
     page = PageOfComments(comments=[Comment(id="1", body={"type": "doc"})])
     mocker.patch.object(client, "get_comments", return_value=page)

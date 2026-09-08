@@ -1,7 +1,7 @@
 """JIRA MCP tools — pure functions, registered by server.py."""
 
 from collections.abc import Callable
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias, cast
 
 from atlassian.markdown import parse, render
 from atlassian.params import Limit, Offset, Ok, Plain
@@ -22,6 +22,7 @@ from atlassian.jira.schema.field_meta import (
 )
 from atlassian.jira.schema.issue import (
     IssueBean,
+    JiraIssueFields,
     SearchAndReconcileResults,
     SearchResults,
 )
@@ -183,12 +184,13 @@ def get_issue(
         ),
     ] = None,
 ) -> IssueBean:
-    """Get an issue. Description is Markdown."""
+    """Get an issue. Description and other rich-text fields are Markdown."""
     issue = client.get_issue(
         issue_key, fields=[*_DEFAULT_ISSUE_FIELDS, *(fields or [])]
     )
     if issue.fields:
         issue.fields.description = render(issue.fields.description, plain=plain)
+        _render_adf_extras(issue.fields, plain=plain)
     if (
         to_file is not None
         and issue.fields
@@ -410,6 +412,18 @@ def get_create_field_metadata(
 def get_edit_field_metadata(issue_key: IssueKey) -> IssueUpdateMetadata:
     """Get the fields editable on an issue: which are required and each field's schema."""
     return client.get_edit_metadata(issue_key)
+
+
+def _render_adf_extras(fields: JiraIssueFields, *, plain: bool) -> None:
+    # Extra fields pass through untyped, but an ADF document is unmistakable
+    # by shape, so textarea custom fields read back as Markdown like description.
+    extras: dict[str, Any] = fields.model_extra or {}
+    for key, value in list(extras.items()):
+        if not isinstance(value, dict):
+            continue
+        doc = cast(dict[str, Any], value)
+        if doc.get("type") == "doc":
+            extras[key] = render(doc, plain=plain)
 
 
 def _takes_adf(schema: JsonTypeBean) -> bool:
