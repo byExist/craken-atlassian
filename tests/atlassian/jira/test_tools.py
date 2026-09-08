@@ -1,8 +1,8 @@
 """Tests for atlassian.jira.tools — the MCP tool layer.
 
 Tools are thin orchestration over ``client`` plus Markdown<->ADF conversion
-(via marklas) and a few rules. Here ``client`` and the ``to_md``/``to_adf``
-seams are patched with ``mocker`` so the tool's own logic is what's exercised
+(via marklas) and a few rules. Here ``client`` and the marklas seams in
+``atlassian.markdown`` are patched with ``mocker`` so the tool's own logic is what's exercised
 — not the network (covered in jira/test_client.py) nor marklas's conversion
 fidelity (marklas has its own tests).
 """
@@ -16,6 +16,7 @@ from pytest_mock import MockerFixture
 
 from atlassian.download import Download
 from atlassian.jira import client, tools
+from atlassian import markdown
 from atlassian.jira.schema.comment import Comment, PageOfComments
 from atlassian.jira.schema.common import IssueTypeDetails
 from atlassian.jira.schema.issue import (
@@ -117,7 +118,7 @@ def test_get_board_issues_converts_id(mocker: MockerFixture):
 def test_get_issue_converts_description_to_markdown(mocker: MockerFixture):
     issue = IssueBean(key="A-1", fields=JiraIssueFields(description={"type": "doc"}))
     mocker.patch.object(client, "get_issue", return_value=issue)
-    to_md = mocker.patch.object(tools, "to_md", return_value="# Heading")
+    to_md = mocker.patch.object(markdown, "to_md", return_value="# Heading")
 
     out = tools.get_issue("A-1")
 
@@ -129,7 +130,7 @@ def test_get_issue_converts_description_to_markdown(mocker: MockerFixture):
 def test_get_issue_forwards_plain_false(mocker: MockerFixture):
     issue = IssueBean(key="A-1", fields=JiraIssueFields(description={"type": "doc"}))
     mocker.patch.object(client, "get_issue", return_value=issue)
-    to_md = mocker.patch.object(tools, "to_md", return_value="md")
+    to_md = mocker.patch.object(markdown, "to_md", return_value="md")
 
     tools.get_issue("A-1", plain=False)
 
@@ -141,7 +142,7 @@ def test_get_issue_to_file_writes_body_and_omits_it(
 ):
     issue = IssueBean(key="A-1", fields=JiraIssueFields(description={"type": "doc"}))
     mocker.patch.object(client, "get_issue", return_value=issue)
-    mocker.patch.object(tools, "to_md", return_value="file body")
+    mocker.patch.object(markdown, "to_md", return_value="file body")
     target = tmp_path / "desc.md"
 
     out = tools.get_issue("A-1", to_file=str(target))
@@ -154,7 +155,7 @@ def test_get_issue_to_file_writes_body_and_omits_it(
 def test_get_issue_skips_conversion_without_adf(mocker: MockerFixture):
     issue = IssueBean(key="A-1", fields=JiraIssueFields(description=None))
     mocker.patch.object(client, "get_issue", return_value=issue)
-    to_md = mocker.patch.object(tools, "to_md")
+    to_md = mocker.patch.object(markdown, "to_md")
 
     out = tools.get_issue("A-1")
 
@@ -177,7 +178,7 @@ def test_get_issue_passes_fields_to_client(mocker: MockerFixture):
 def test_get_comments_converts_bodies(mocker: MockerFixture):
     page = PageOfComments(comments=[Comment(id="1", body={"type": "doc"})])
     mocker.patch.object(client, "get_comments", return_value=page)
-    mocker.patch.object(tools, "to_md", return_value="md body")
+    mocker.patch.object(markdown, "to_md", return_value="md body")
 
     out = tools.get_comments("A-1")
 
@@ -187,7 +188,7 @@ def test_get_comments_converts_bodies(mocker: MockerFixture):
 def test_get_worklogs_converts_comments(mocker: MockerFixture):
     page = PageOfWorklogs(worklogs=[Worklog(time_spent="1h", comment={"type": "doc"})])
     mocker.patch.object(client, "get_worklogs", return_value=page)
-    mocker.patch.object(tools, "to_md", return_value="logged")
+    mocker.patch.object(markdown, "to_md", return_value="logged")
 
     out = tools.get_worklogs("A-1")
 
@@ -203,7 +204,7 @@ def test_create_issue_converts_markdown_to_adf(mocker: MockerFixture):
     create = mocker.patch.object(
         client, "create_issue", return_value=CreatedIssue(key="A-9")
     )
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": True})
 
     out = tools.create_issue("ABC", "Title", description="# Hi")
 
@@ -224,7 +225,7 @@ def test_create_issue_converts_markdown_to_adf(mocker: MockerFixture):
 
 def test_create_issue_passes_none_when_no_description(mocker: MockerFixture):
     create = mocker.patch.object(client, "create_issue", return_value=CreatedIssue())
-    to_adf = mocker.patch.object(tools, "to_adf")
+    to_adf = mocker.patch.object(markdown, "to_adf")
 
     tools.create_issue("ABC", "Title")
 
@@ -246,7 +247,7 @@ def test_create_issue_reads_from_file(mocker: MockerFixture, tmp_path: Path):
     body_file = tmp_path / "body.md"
     body_file.write_text("from disk")
     mocker.patch.object(client, "create_issue", return_value=CreatedIssue())
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     tools.create_issue("ABC", "Title", from_file=str(body_file))
 
@@ -280,7 +281,7 @@ def test_create_issue_passes_parent(mocker: MockerFixture):
 
 def test_update_issue_converts_and_returns_ok(mocker: MockerFixture):
     update = mocker.patch.object(client, "update_issue")
-    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": True})
 
     assert tools.update_issue("A-1", summary="S", description="# d") == "ok"
     assert update.call_args == call(
@@ -380,7 +381,7 @@ def test_add_comment_converts_and_returns_id(mocker: MockerFixture):
     mock_comment = MagicMock()
     mock_comment.id = "99"
     add = mocker.patch.object(client, "add_comment", return_value=mock_comment)
-    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": True})
 
     assert tools.add_comment("A-1", "hello") == "99"
     assert add.call_args == call("A-1", body={"adf": True})
@@ -388,7 +389,7 @@ def test_add_comment_converts_and_returns_id(mocker: MockerFixture):
 
 def test_add_worklog_converts_comment(mocker: MockerFixture):
     add = mocker.patch.object(client, "add_worklog")
-    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": True})
 
     assert tools.add_worklog("A-1", "2h", comment="note") == "ok"
     assert add.call_args == call(
@@ -733,7 +734,7 @@ def test_update_issue_reads_from_file(mocker: MockerFixture, tmp_path: Path):
     body_file = tmp_path / "body.md"
     body_file.write_text("disk body")
     update = mocker.patch.object(client, "update_issue")
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.update_issue("A-1", from_file=str(body_file)) == "ok"
     assert to_adf.call_args == call("disk body")

@@ -1,6 +1,6 @@
 """Tests for atlassian.confluence.tools — the MCP tool layer.
 
-``client`` and the ``to_md``/``to_adf`` seams are patched with ``mocker`` so the
+``client`` and the marklas seams in ``atlassian.markdown`` are patched with ``mocker`` so the
 tool's own logic is exercised: body stripping on lists, Markdown<->ADF
 conversion, optimistic-lock version handling on updates, attachment file
 reads, and "OK" returns.
@@ -14,6 +14,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from atlassian.confluence import client, tools
+from atlassian import markdown
 from atlassian.download import Download
 from atlassian.confluence.schema.blog_post import BlogPost, MultiEntityResultBlogPost
 from atlassian.confluence.schema.comment import Comment, MultiEntityResultComment
@@ -96,7 +97,7 @@ def test_get_page_converts_body_to_markdown(mocker: MockerFixture):
     mocker.patch.object(
         client, "get_page", return_value=Page(id="p1", body={"type": "doc"})
     )
-    to_md = mocker.patch.object(tools, "to_md", return_value="# Body")
+    to_md = mocker.patch.object(markdown, "to_md", return_value="# Body")
 
     out = tools.get_page("p1")
 
@@ -110,7 +111,7 @@ def test_get_page_forwards_plain_false_and_writes_file(
     mocker.patch.object(
         client, "get_page", return_value=Page(id="p1", body={"type": "doc"})
     )
-    to_md = mocker.patch.object(tools, "to_md", return_value="file body")
+    to_md = mocker.patch.object(markdown, "to_md", return_value="file body")
     target = tmp_path / "page.md"
 
     out = tools.get_page("p1", plain=False, to_file=str(target))
@@ -124,7 +125,7 @@ def test_get_blog_post_converts_body(mocker: MockerFixture):
     mocker.patch.object(
         client, "get_blog_post", return_value=BlogPost(id="b1", body={"x": 1})
     )
-    mocker.patch.object(tools, "to_md", return_value="md")
+    mocker.patch.object(markdown, "to_md", return_value="md")
 
     assert tools.get_blog_post("b1").body == "md"
 
@@ -132,7 +133,7 @@ def test_get_blog_post_converts_body(mocker: MockerFixture):
 def test_get_comments_converts_bodies(mocker: MockerFixture):
     result = MultiEntityResultComment(results=[Comment(id="c1", body={"type": "doc"})])
     mocker.patch.object(client, "get_comments", return_value=result)
-    mocker.patch.object(tools, "to_md", return_value="md")
+    mocker.patch.object(markdown, "to_md", return_value="md")
 
     assert tools.get_comments("p1").results[0].body == "md"
 
@@ -140,7 +141,7 @@ def test_get_comments_converts_bodies(mocker: MockerFixture):
 def test_get_comment_replies_converts_bodies(mocker: MockerFixture):
     result = MultiEntityResultComment(results=[Comment(id="r1", body={"type": "doc"})])
     mocker.patch.object(client, "get_comment_children", return_value=result)
-    mocker.patch.object(tools, "to_md", return_value="md")
+    mocker.patch.object(markdown, "to_md", return_value="md")
 
     assert tools.get_comment_replies("c1").results[0].body == "md"
 
@@ -150,7 +151,7 @@ def test_get_inline_comments_converts_bodies(mocker: MockerFixture):
         results=[InlineComment(id="i1", body={"type": "doc"})]
     )
     mocker.patch.object(client, "get_inline_comments", return_value=result)
-    mocker.patch.object(tools, "to_md", return_value="md")
+    mocker.patch.object(markdown, "to_md", return_value="md")
 
     assert tools.get_inline_comments("p1").results[0].body == "md"
 
@@ -158,7 +159,7 @@ def test_get_inline_comments_converts_bodies(mocker: MockerFixture):
 def test_get_tasks_converts_bodies(mocker: MockerFixture):
     result = MultiEntityResultTask(results=[Task(id="t1", body={"type": "doc"})])
     mocker.patch.object(client, "list_tasks", return_value=result)
-    mocker.patch.object(tools, "to_md", return_value="md")
+    mocker.patch.object(markdown, "to_md", return_value="md")
 
     assert tools.get_tasks("p1").results[0].body == "md"
 
@@ -176,7 +177,7 @@ def test_get_likes_wraps_count(mocker: MockerFixture):
 
 def test_create_page_converts_and_returns_id(mocker: MockerFixture):
     create = mocker.patch.object(client, "create_page", return_value=Page(id="p1"))
-    mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.create_page("1", "T", content="# Hi") == "p1"
     assert create.call_args == call("1", "T", body={"adf": 1}, parent_id=None)
@@ -184,7 +185,7 @@ def test_create_page_converts_and_returns_id(mocker: MockerFixture):
 
 def test_create_page_passes_none_without_content(mocker: MockerFixture):
     create = mocker.patch.object(client, "create_page")
-    to_adf = mocker.patch.object(tools, "to_adf")
+    to_adf = mocker.patch.object(markdown, "to_adf")
 
     tools.create_page("1", "T")
 
@@ -196,7 +197,7 @@ def test_create_page_reads_from_file(mocker: MockerFixture, tmp_path: Path):
     f = tmp_path / "body.md"
     f.write_text("on disk")
     mocker.patch.object(client, "create_page")
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     tools.create_page("1", "T", from_file=str(f))
 
@@ -219,7 +220,7 @@ def update_page_at_v5(mocker: MockerFixture) -> MagicMock:
     mocker.patch.object(
         client, "get_page", return_value=Page(id="p1", version=Version(number=5))
     )
-    mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
     return mocker.patch.object(client, "update_page")
 
 
@@ -256,7 +257,7 @@ def test_update_blog_post_increments_version(mocker: MockerFixture):
         "get_blog_post",
         return_value=BlogPost(id="b1", version=Version(number=2)),
     )
-    mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
     update = mocker.patch.object(client, "update_blog_post")
 
     assert tools.update_blog_post("b1", "T", content="new") == "OK"
@@ -269,7 +270,7 @@ def test_update_blog_post_rejects_stale_version(mocker: MockerFixture):
         "get_blog_post",
         return_value=BlogPost(id="b1", version=Version(number=4)),
     )
-    mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
     mocker.patch.object(client, "update_blog_post")
 
     with pytest.raises(ValueError, match="version conflict"):
@@ -284,7 +285,7 @@ def test_update_blog_post_rejects_stale_version(mocker: MockerFixture):
 def test_edit_comment_bumps_fetched_version(mocker: MockerFixture):
     mocker.patch.object(client, "get_comment_version", return_value=7)
     edit = mocker.patch.object(client, "edit_comment")
-    mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.edit_comment("c1", "updated") == "OK"
     assert edit.call_args == call("c1", body={"adf": 1}, version_number=8)
@@ -363,7 +364,7 @@ def test_add_comment_returns_id(mocker: MockerFixture):
     mock_comment = MagicMock()
     mock_comment.id = "111"
     mocker.patch.object(client, "add_comment", return_value=mock_comment)
-    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": True})
 
     assert tools.add_comment("p1", "hi") == "111"
 
@@ -372,7 +373,7 @@ def test_reply_to_comment_returns_id(mocker: MockerFixture):
     mock_comment = MagicMock()
     mock_comment.id = "222"
     mocker.patch.object(client, "reply_to_comment", return_value=mock_comment)
-    mocker.patch.object(tools, "to_adf", return_value={"adf": True})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": True})
 
     assert tools.reply_to_comment("p1", "c1", "re") == "222"
 
@@ -448,7 +449,7 @@ def test_get_inline_comment_replies_converts_bodies(mocker: MockerFixture):
         results=[InlineComment(id="i1", body={"type": "doc"})]
     )
     mocker.patch.object(client, "get_inline_comment_children", return_value=result)
-    mocker.patch.object(tools, "to_md", return_value="md")
+    mocker.patch.object(markdown, "to_md", return_value="md")
 
     assert tools.get_inline_comment_replies("i1").results[0].body == "md"
 
@@ -459,7 +460,7 @@ def test_get_blog_post_to_file_writes_body_and_omits_it(
     mocker.patch.object(
         client, "get_blog_post", return_value=BlogPost(id="b1", body={"type": "doc"})
     )
-    mocker.patch.object(tools, "to_md", return_value="file body")
+    mocker.patch.object(markdown, "to_md", return_value="file body")
     target = tmp_path / "bp.md"
 
     out = tools.get_blog_post("b1", to_file=str(target))
@@ -475,7 +476,7 @@ def test_update_page_reads_from_file(mocker: MockerFixture, tmp_path: Path):
         client, "get_page", return_value=Page(id="p1", version=Version(number=2))
     )
     mocker.patch.object(client, "update_page")
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.update_page("p1", "T", from_file=str(f)) == "OK"
     assert to_adf.call_args == call("disk body")
@@ -495,7 +496,7 @@ def test_update_blog_post_reads_from_file(mocker: MockerFixture, tmp_path: Path)
         return_value=BlogPost(id="b1", version=Version(number=1)),
     )
     mocker.patch.object(client, "update_blog_post")
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.update_blog_post("b1", "T", from_file=str(f)) == "OK"
     assert to_adf.call_args == call("disk body")
@@ -505,7 +506,7 @@ def test_create_blog_post_converts_and_returns_id(mocker: MockerFixture):
     create = mocker.patch.object(
         client, "create_blog_post", return_value=BlogPost(id="b1")
     )
-    mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.create_blog_post("1", "T", content="# Hi") == "b1"
     assert create.call_args == call("1", "T", body={"adf": 1})
@@ -520,7 +521,7 @@ def test_create_blog_post_reads_from_file(mocker: MockerFixture, tmp_path: Path)
     f = tmp_path / "body.md"
     f.write_text("disk body")
     mocker.patch.object(client, "create_blog_post", return_value=BlogPost(id="b1"))
-    to_adf = mocker.patch.object(tools, "to_adf", return_value={"adf": 1})
+    to_adf = mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.create_blog_post("1", "T", from_file=str(f)) == "b1"
     assert to_adf.call_args == call("disk body")

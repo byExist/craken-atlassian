@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, Literal, TypeAlias
 
-from marklas import to_adf, to_md
+from atlassian.markdown import parse, render
 from pydantic import Field
 
 from atlassian.jira import client
@@ -180,8 +180,8 @@ def get_issue(
     issue = client.get_issue(
         issue_key, fields=[*_DEFAULT_ISSUE_FIELDS, *(fields or [])]
     )
-    if issue.fields and isinstance(issue.fields.description, dict):
-        issue.fields.description = to_md(issue.fields.description, plain=plain)
+    if issue.fields:
+        issue.fields.description = render(issue.fields.description, plain=plain)
     if (
         to_file is not None
         and issue.fields
@@ -235,7 +235,7 @@ def create_issue(
         project_key,
         summary,
         issue_type=issue_type,
-        description=to_adf(description) if description else None,
+        description=parse(description),
         assignee=assignee,
         parent_key=parent,
         due_date=due_date,
@@ -283,7 +283,7 @@ def update_issue(
     client.update_issue(
         issue_key,
         summary=summary,
-        description=to_adf(description) if description else None,
+        description=parse(description),
         parent_key=parent,
         assignee=assignee,
         due_date=due_date,
@@ -436,8 +436,7 @@ def get_comments(
     """Get an issue's comments. Body is Markdown."""
     result = client.get_comments(issue_key, start_at=start_at, max_results=limit)
     for comment in result.comments:
-        if isinstance(comment.body, dict):
-            comment.body = to_md(comment.body, plain=plain)
+        comment.body = render(comment.body, plain=plain)
     return result
 
 
@@ -446,7 +445,7 @@ def add_comment(
     body: Annotated[str, Field(description="Markdown.")],
 ) -> str:
     """Add a comment to an issue; returns the comment id."""
-    result = client.add_comment(issue_key, body=to_adf(body))
+    result = client.add_comment(issue_key, body=parse(body))
     return str(result.id)
 
 
@@ -456,7 +455,7 @@ def edit_comment(
     body: Annotated[str, Field(description="Markdown.")],
 ) -> Ok:
     """Edit a comment."""
-    client.update_comment(issue_key, comment_id, body=to_adf(body))
+    client.update_comment(issue_key, comment_id, body=parse(body))
     return "ok"
 
 
@@ -779,8 +778,7 @@ def get_worklogs(
     """Get an issue's worklog entries. Comment is Markdown."""
     result = client.get_worklogs(issue_key, start_at=start_at, max_results=limit)
     for wl in result.worklogs:
-        if isinstance(wl.comment, dict):
-            wl.comment = to_md(wl.comment, plain=plain)
+        wl.comment = render(wl.comment, plain=plain)
     return result
 
 
@@ -795,7 +793,7 @@ def add_worklog(
         issue_key,
         time_spent=time_spent,
         started=started,
-        comment=to_adf(comment) if comment else None,
+        comment=parse(comment),
     )
     return "ok"
 
@@ -813,7 +811,7 @@ def update_worklog(
         worklog_id,
         time_spent=time_spent,
         started=started,
-        comment=to_adf(comment) if comment else None,
+        comment=parse(comment),
     )
     return "ok"
 

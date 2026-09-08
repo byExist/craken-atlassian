@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal, TypeAlias
 
-from marklas import to_adf, to_md
+from atlassian.markdown import parse, render
 from pydantic import Field
 
 from atlassian.confluence import client
@@ -143,8 +143,7 @@ def get_page(
 ) -> Page:
     """Get a page. Body is Markdown."""
     page = client.get_page(page_id)
-    if isinstance(page.body, dict):
-        page.body = to_md(page.body, plain=plain)
+    page.body = render(page.body, plain=plain)
     if to_file is not None and isinstance(page.body, str):
         write_body(to_file, page.body)
         page.body = None
@@ -231,7 +230,7 @@ def create_page(
         raise ValueError("provide either content or from_file, not both")
     if from_file is not None:
         content = read_body(from_file)
-    adf = to_adf(content) if content else None
+    adf = parse(content)
     page = client.create_page(
         client.resolve_space_id(space),
         title,
@@ -273,7 +272,7 @@ def update_page(
     client.update_page(
         page_id,
         title,
-        body=to_adf(content),
+        body=parse(content),
         version_number=(current_version or 0) + 1,
     )
     return "OK"
@@ -310,8 +309,7 @@ def get_blog_post(
 ) -> BlogPost:
     """Get a blog post. Body is Markdown."""
     post = client.get_blog_post(blog_post_id)
-    if isinstance(post.body, dict):
-        post.body = to_md(post.body, plain=plain)
+    post.body = render(post.body, plain=plain)
     if to_file is not None and isinstance(post.body, str):
         write_body(to_file, post.body)
         post.body = None
@@ -334,7 +332,7 @@ def create_blog_post(
     post = client.create_blog_post(
         client.resolve_space_id(space),
         title,
-        body=to_adf(content) if content else None,
+        body=parse(content),
     )
     return str(post.id)
 
@@ -371,7 +369,7 @@ def update_blog_post(
     client.update_blog_post(
         blog_post_id,
         title,
-        body=to_adf(content),
+        body=parse(content),
         version_number=(current_version or 0) + 1,
     )
     return "OK"
@@ -394,8 +392,7 @@ def get_comments(
     """Get a page's footer comments. Body is Markdown."""
     result = client.get_comments(page_id, limit=limit, cursor=cursor)
     for comment in result.results:
-        if isinstance(comment.body, dict):
-            comment.body = to_md(comment.body, plain=plain)
+        comment.body = render(comment.body, plain=plain)
     return result
 
 
@@ -404,7 +401,7 @@ def add_comment(
     content: Annotated[str, Field(description="Markdown.")],
 ) -> str:
     """Add a footer comment to a page; returns the comment id."""
-    result = client.add_comment(page_id, body=to_adf(content))
+    result = client.add_comment(page_id, body=parse(content))
     return str(result.id)
 
 
@@ -416,7 +413,7 @@ def edit_comment(
     version = client.get_comment_version(comment_id)
     client.edit_comment(
         comment_id,
-        body=to_adf(content),
+        body=parse(content),
         version_number=version + 1,
     )
     return "OK"
@@ -434,7 +431,7 @@ def reply_to_comment(
     content: Annotated[str, Field(description="Markdown.")],
 ) -> str:
     """Reply to a footer comment; returns the comment id."""
-    result = client.reply_to_comment(page_id, parent_comment_id, body=to_adf(content))
+    result = client.reply_to_comment(page_id, parent_comment_id, body=parse(content))
     return str(result.id)
 
 
@@ -444,8 +441,7 @@ def get_comment_replies(
     """Get replies to a footer comment. Body is Markdown."""
     result = client.get_comment_children(comment_id, limit=limit, cursor=cursor)
     for comment in result.results:
-        if isinstance(comment.body, dict):
-            comment.body = to_md(comment.body, plain=plain)
+        comment.body = render(comment.body, plain=plain)
     return result
 
 
@@ -458,8 +454,7 @@ def get_inline_comments(
     """Get a page's inline comments. Body is Markdown."""
     result = client.get_inline_comments(page_id, limit=limit, cursor=cursor)
     for comment in result.results:
-        if isinstance(comment.body, dict):
-            comment.body = to_md(comment.body, plain=plain)
+        comment.body = render(comment.body, plain=plain)
     return result
 
 
@@ -477,7 +472,7 @@ def create_inline_comment(
     """Create an inline comment anchored to highlighted text on a page."""
     client.create_inline_comment(
         page_id,
-        body=to_adf(content),
+        body=parse(content),
         inline_marker_ref=inline_marker_ref,
         inline_original_selection=inline_original_selection,
     )
@@ -502,8 +497,7 @@ def get_inline_comment_replies(
     """Get replies to an inline comment. Body is Markdown."""
     result = client.get_inline_comment_children(comment_id, limit=limit, cursor=cursor)
     for comment in result.results:
-        if isinstance(comment.body, dict):
-            comment.body = to_md(comment.body, plain=plain)
+        comment.body = render(comment.body, plain=plain)
     return result
 
 
@@ -641,8 +635,7 @@ def get_tasks(
         page_id=page_id, status=status, limit=limit, cursor=cursor
     )
     for task in result.results:
-        if isinstance(task.body, dict):
-            task.body = to_md(task.body, plain=plain)
+        task.body = render(task.body, plain=plain)
     return result
 
 
