@@ -509,10 +509,30 @@ def transition_issue(
     transition_id: Annotated[
         str, Field(description="Transition id (from get_transitions).")
     ],
+    comment: Annotated[
+        str | None, Field(description="Markdown comment added with the transition.")
+    ] = None,
+    extra_fields: ExtraFields = None,
 ) -> Ok:
-    """Transition an issue to a new status."""
-    client.transition_issue(issue_key, transition_id)
+    """Transition an issue to a new status, optionally setting the transition screen's fields (see get_transitions)."""
+    client.transition_issue(
+        issue_key,
+        transition_id,
+        comment=parse(comment),
+        fields=_markdown_fields_to_adf(
+            extra_fields, lambda: _transition_field_schemas(issue_key, transition_id)
+        ),
+    )
     return "ok"
+
+
+def _transition_field_schemas(
+    issue_key: str, transition_id: str
+) -> dict[str, JsonTypeBean]:
+    for t in client.get_transitions(issue_key).transitions:
+        if t.id == transition_id:
+            return {key: f.field_schema for key, f in (t.fields or {}).items()}
+    return {}
 
 
 # --- Comment ---

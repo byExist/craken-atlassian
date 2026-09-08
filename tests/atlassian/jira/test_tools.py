@@ -39,6 +39,7 @@ from atlassian.jira.schema.issue_type_meta import (
     PageOfCreateMetaIssueTypes,
 )
 from atlassian.jira.schema.sprint import SprintBean
+from atlassian.jira.schema.transition import IssueTransition, Transitions
 from atlassian.jira.schema.version import ProjectVersion
 from atlassian.jira.schema.worklog import PageOfWorklogs, Worklog
 
@@ -522,6 +523,66 @@ def test_update_issue_skips_metadata_without_string_extras(mocker: MockerFixture
     tools.update_issue("A-1", extra_fields={"customfield_10016": 5})
 
     meta.assert_not_called()
+
+
+def test_transition_issue_converts_comment_and_screen_textareas(
+    mocker: MockerFixture,
+):
+    mocker.patch.object(
+        client,
+        "get_transitions",
+        return_value=Transitions(
+            transitions=[
+                IssueTransition(id="1", fields=None),
+                IssueTransition(
+                    id="581",
+                    fields={
+                        "customfield_1": _edit_field("customfield_1", _TEXTAREA),
+                        "resolution": _edit_field(
+                            "resolution", JsonTypeBean(type="resolution")
+                        ),
+                    },
+                ),
+            ]
+        ),
+    )
+    transition = mocker.patch.object(client, "transition_issue")
+
+    def wrap(text: str) -> dict[str, str]:
+        return {"md": text}
+
+    to_adf = mocker.patch.object(markdown, "to_adf", side_effect=wrap)
+
+    out = tools.transition_issue(
+        "A-1",
+        "581",
+        comment="done",
+        extra_fields={"customfield_1": "notes", "resolution": {"name": "Done"}},
+    )
+
+    assert out == "ok"
+    assert to_adf.call_args_list == [call("done"), call("notes")]
+    assert transition.call_args == call(
+        "A-1",
+        "581",
+        comment={"md": "done"},
+        fields={"customfield_1": {"md": "notes"}, "resolution": {"name": "Done"}},
+    )
+
+
+def test_transition_issue_passes_strings_through_for_unknown_transition(
+    mocker: MockerFixture,
+):
+    mocker.patch.object(
+        client, "get_transitions", return_value=Transitions(transitions=[])
+    )
+    transition = mocker.patch.object(client, "transition_issue")
+    to_adf = mocker.patch.object(markdown, "to_adf")
+
+    tools.transition_issue("A-1", "999", extra_fields={"customfield_1": "text"})
+
+    to_adf.assert_not_called()
+    assert transition.call_args.kwargs["fields"] == {"customfield_1": "text"}
 
 
 def test_get_create_field_metadata_resolves_issue_type_name(mocker: MockerFixture):

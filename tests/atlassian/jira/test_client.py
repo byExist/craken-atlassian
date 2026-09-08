@@ -581,6 +581,23 @@ def test_transition_issue_posts_transition_id(jira_api: MockServer):
     assert jira_api.body(jira_api.last) == {"transition": {"id": "31"}}
 
 
+def test_transition_issue_adds_comment_and_fields(jira_api: MockServer):
+    jira_api.add("POST", "/rest/api/3/issue/ABC-1/transitions", json={})
+
+    client.transition_issue(
+        "ABC-1",
+        "581",
+        comment={"type": "doc"},
+        fields={"resolution": {"name": "Done"}},
+    )
+
+    assert jira_api.body(jira_api.last) == {
+        "transition": {"id": "581"},
+        "fields": {"resolution": {"name": "Done"}},
+        "update": {"comment": [{"add": {"body": {"type": "doc"}}}]},
+    }
+
+
 def test_add_comment_posts_body_and_parses_comment(jira_api: MockServer):
     jira_api.add(
         "POST", "/rest/api/3/issue/ABC-1/comment", json={"id": "10", "body": None}

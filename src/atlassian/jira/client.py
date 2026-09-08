@@ -580,10 +580,21 @@ def assign_issue(issue_key: str, assignee: str | None = None) -> None:
     resp.raise_for_status()
 
 
-def transition_issue(issue_key: str, transition_id: str) -> None:
+def transition_issue(
+    issue_key: str,
+    transition_id: str,
+    *,
+    comment: ADF | None = None,
+    fields: dict[str, Any] | None = None,
+) -> None:
+    payload: dict[str, Any] = {"transition": {"id": transition_id}}
+    if fields:
+        payload["fields"] = fields
+    if comment is not None:
+        payload["update"] = {"comment": [{"add": {"body": comment}}]}
     resp = _get_client().post(
         f"/rest/api/3/issue/{issue_key}/transitions",
-        json={"transition": {"id": transition_id}},
+        json=payload,
     )
     resp.raise_for_status()
 
