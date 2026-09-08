@@ -102,22 +102,31 @@ def test_get_page_views_returns_content_views(confluence_api: MockServer):
     assert views.count == 42
 
 
+def test_get_attachment_parses_metadata(confluence_api: MockServer):
+    confluence_api.add(
+        "GET",
+        "/wiki/api/v2/attachments/att-1",
+        json={"id": "att-1", "title": "spec.pdf", "pageId": "10"},
+    )
+
+    attachment = client.get_attachment("att-1")
+
+    assert attachment.title == "spec.pdf"
+    assert attachment.page_id == "10"
+
+
 def test_get_attachment_content_returns_bytes_and_type(confluence_api: MockServer):
     confluence_api.add(
         "GET",
         "/wiki/rest/api/content/10/child/attachment/att-1/download",
         content=b"PDFDATA",
-        headers={
-            "content-type": "application/pdf",
-            "content-disposition": 'attachment; filename="spec.pdf"',
-        },
+        headers={"content-type": "application/pdf"},
     )
 
     download = client.get_attachment_content("10", "att-1")
 
     assert download.data == b"PDFDATA"
     assert download.content_type == "application/pdf"
-    assert download.filename == "spec.pdf"
 
 
 # ---------------------------------------------------------------------------

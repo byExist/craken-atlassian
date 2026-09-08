@@ -19,7 +19,7 @@ from atlassian.http import make_client
 from atlassian.download import Download
 
 from atlassian.jira.schema.adf import ADF
-from atlassian.jira.schema.attachment import Attachment
+from atlassian.jira.schema.attachment import Attachment, AttachmentMetadata
 from atlassian.jira.schema.board import PageBeanBoard
 from atlassian.jira.schema.changelog import PageBeanChangelog
 from atlassian.jira.schema.comment import Comment, PageOfComments
@@ -157,6 +157,12 @@ def get_watchers(issue_key: str) -> Watchers:
     resp = _get_client().get(f"/rest/api/3/issue/{issue_key}/watchers")
     resp.raise_for_status()
     return Watchers.model_validate(resp.json())
+
+
+def get_attachment(attachment_id: str) -> AttachmentMetadata:
+    resp = _get_client().get(f"/rest/api/3/attachment/{attachment_id}")
+    resp.raise_for_status()
+    return AttachmentMetadata.model_validate(resp.json())
 
 
 def get_attachment_content(attachment_id: str) -> Download:

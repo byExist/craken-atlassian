@@ -15,6 +15,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from atlassian.download import Download
+from atlassian.jira.schema.attachment import AttachmentMetadata
 from atlassian.jira import client, tools
 from atlassian import markdown
 from atlassian.jira.schema.comment import Comment, PageOfComments
@@ -576,11 +577,14 @@ def test_create_sprint_returns_id(mocker: MockerFixture):
 # ---------------------------------------------------------------------------
 
 
-def test_download_attachment_keeps_original_filename(mocker: MockerFixture):
+def test_download_attachment_names_file_from_metadata(mocker: MockerFixture):
     mocker.patch.object(
         client,
-        "get_attachment_content",
-        return_value=Download(b"\x89PNG", "image/png", "shot.png"),
+        "get_attachment",
+        return_value=AttachmentMetadata(id=42, filename="shot.png"),
+    )
+    mocker.patch.object(
+        client, "get_attachment_content", return_value=Download(b"\x89PNG", "image/png")
     )
 
     from pathlib import Path
@@ -593,18 +597,21 @@ def test_download_attachment_keeps_original_filename(mocker: MockerFixture):
         Path(path).unlink(missing_ok=True)
 
 
-def test_download_attachment_falls_back_to_temp_name(mocker: MockerFixture):
+def test_download_attachment_falls_back_when_metadata_has_no_filename(
+    mocker: MockerFixture,
+):
     mocker.patch.object(
-        client,
-        "get_attachment_content",
-        return_value=Download(b"\x89PNG", "image/png", None),
+        client, "get_attachment", return_value=AttachmentMetadata(id=42)
+    )
+    mocker.patch.object(
+        client, "get_attachment_content", return_value=Download(b"\x89PNG", "image/png")
     )
 
     from pathlib import Path
 
     path = tools.download_attachment("42")
     try:
-        assert path.endswith(".png")
+        assert Path(path).name == "attachment.png"
     finally:
         Path(path).unlink(missing_ok=True)
 

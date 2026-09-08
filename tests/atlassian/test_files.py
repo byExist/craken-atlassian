@@ -70,6 +70,17 @@ def test_write_temp_strips_directory_components_from_name():
         Path(path).parent.rmdir()
 
 
+def test_write_temp_normalises_name_to_nfc():
+    # "사진.png" with decomposed jamo (NFD), as macOS uploads arrive.
+    path = write_temp(b"x", "사진.png")
+
+    try:
+        assert Path(path).name == "사진.png"
+    finally:
+        Path(path).unlink(missing_ok=True)
+        Path(path).parent.rmdir()
+
+
 @pytest.mark.parametrize("name", ["", ".", ".."])
 def test_write_temp_replaces_unusable_name(name: str):
     path = write_temp(b"x", name)

@@ -6,7 +6,7 @@ from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
 class Attachment(ConfluenceModel):
     """An attachment on a page.
 
-    OpenAPI (v2): AttachmentBulk
+    OpenAPI (v2): AttachmentBulk / AttachmentSingle — GET /attachments/{id} response
     """
 
     id: str | None = None
@@ -16,6 +16,10 @@ class Attachment(ConfluenceModel):
     media_type: str | None = None
     file_size: int | None = None
     comment: str | None = None
+    # Exactly one of these is set: the content the attachment belongs to.
+    page_id: str | None = None
+    blog_post_id: str | None = None
+    custom_content_id: str | None = None
 
 
 class MultiEntityResultAttachment(CursorPage):

@@ -8,6 +8,7 @@ full-document regeneration.
 """
 
 import tempfile
+import unicodedata
 from pathlib import Path
 
 
@@ -30,7 +31,9 @@ def write_temp(data: bytes, name: str) -> str:
     The file persists until the OS cleans its temp dir; copy it to keep it.
     """
     # Only the final component is used, so a server-supplied name can't escape the temp dir.
-    safe = Path(name).name
+    # NFC: names uploaded from macOS arrive decomposed (NFD), which other tools
+    # and typed-in paths don't match.
+    safe = unicodedata.normalize("NFC", Path(name).name)
     if safe in ("", ".", ".."):
         safe = "attachment"
     path = Path(tempfile.mkdtemp()) / safe

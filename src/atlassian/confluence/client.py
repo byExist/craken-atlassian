@@ -113,9 +113,15 @@ def get_page_views(page_id: str) -> ContentViews:
     return ContentViews.model_validate(resp.json())
 
 
-def get_attachment_content(page_id: str, attachment_id: str) -> Download:
+def get_attachment(attachment_id: str) -> Attachment:
+    resp = _get_client().get(f"/wiki/api/v2/attachments/{attachment_id}")
+    resp.raise_for_status()
+    return Attachment.model_validate(resp.json())
+
+
+def get_attachment_content(content_id: str, attachment_id: str) -> Download:
     resp = _get_client().get(
-        f"/wiki/rest/api/content/{page_id}/child/attachment/{attachment_id}/download",
+        f"/wiki/rest/api/content/{content_id}/child/attachment/{attachment_id}/download",
         follow_redirects=True,
     )
     resp.raise_for_status()

@@ -11,3 +11,13 @@ class Attachment(JiraModel):
 
     id: str | None = None
     filename: str | None = None
+
+
+class AttachmentMetadata(JiraModel):
+    """Metadata of a single attachment. Unlike ``Attachment``, the spec types ``id`` as an integer here.
+
+    OpenAPI: AttachmentMetadata — GET /rest/api/3/attachment/{id} response
+    """
+
+    id: int | None = None
+    filename: str | None = None

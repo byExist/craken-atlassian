@@ -384,8 +384,9 @@ def download_attachment(
     attachment_id: Annotated[str, Field(description="Attachment id.")],
 ) -> str:
     """Download an attachment to a temp dir under its original filename; returns the saved path. The file never enters the model's context — copy it elsewhere to keep it."""
+    attachment = client.get_attachment(attachment_id)
     download = client.get_attachment_content(attachment_id)
-    return write_temp(download.data, download.name)
+    return write_temp(download.data, attachment.filename or download.fallback_name)
 
 
 def upload_attachment(

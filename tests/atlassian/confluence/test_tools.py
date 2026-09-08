@@ -380,18 +380,73 @@ def test_upload_attachment_reads_file(mocker: MockerFixture, tmp_path: Path):
     )
 
 
-def test_download_attachment_keeps_original_filename(mocker: MockerFixture):
+def test_download_attachment_names_file_from_metadata(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "get_attachment",
+        return_value=Attachment(title="diagram.png", page_id="p1"),
+    )
+    content = mocker.patch.object(
+        client, "get_attachment_content", return_value=Download(b"\x89PNG", "image/png")
+    )
+
+    path = tools.download_attachment("att-1")
+    try:
+        assert Path(path).name == "diagram.png"
+        assert Path(path).read_bytes() == b"\x89PNG"
+        assert content.call_args == call("p1", "att-1")
+    finally:
+        Path(path).unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize(
+    ("attachment", "content_id"),
+    [
+        (Attachment(blog_post_id="b1"), "b1"),
+        (Attachment(custom_content_id="c1"), "c1"),
+    ],
+)
+def test_download_attachment_uses_whichever_container_is_set(
+    mocker: MockerFixture, attachment: Attachment, content_id: str
+):
+    mocker.patch.object(client, "get_attachment", return_value=attachment)
+    content = mocker.patch.object(
+        client, "get_attachment_content", return_value=Download(b"x", "image/png")
+    )
+
+    path = tools.download_attachment("att-1")
+    try:
+        assert content.call_args == call(content_id, "att-1")
+    finally:
+        Path(path).unlink(missing_ok=True)
+
+
+def test_download_attachment_falls_back_when_metadata_has_no_title(
+    mocker: MockerFixture,
+):
+    mocker.patch.object(client, "get_attachment", return_value=Attachment(page_id="p1"))
     mocker.patch.object(
         client,
         "get_attachment_content",
-        return_value=Download(b"\x89PNG", "image/png", "diagram.png"),
+        return_value=Download(b"%PDF", "application/pdf"),
     )
 
-    path = tools.download_attachment("p1", "att-1")
+    path = tools.download_attachment("att-1")
     try:
-        assert Path(path).name == "diagram.png"
+        assert Path(path).name == "attachment.pdf"
     finally:
         Path(path).unlink(missing_ok=True)
+
+
+def test_download_attachment_rejects_metadata_without_container(
+    mocker: MockerFixture,
+):
+    mocker.patch.object(client, "get_attachment", return_value=Attachment(id="att-1"))
+    content = mocker.patch.object(client, "get_attachment_content")
+
+    with pytest.raises(ValueError, match="att-1"):
+        tools.download_attachment("att-1")
+    content.assert_not_called()
 
 
 def test_restore_page_version_defaults_message(mocker: MockerFixture):

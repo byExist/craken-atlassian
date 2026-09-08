@@ -229,12 +229,15 @@ def get_attachments(
 
 
 def download_attachment(
-    page_id: PageId,
     attachment_id: Annotated[str, Field(description="Attachment id.")],
 ) -> str:
     """Download an attachment to a temp dir under its original filename; returns the saved path. The file never enters the model's context — copy it elsewhere to keep it."""
-    download = client.get_attachment_content(page_id, attachment_id)
-    return write_temp(download.data, download.name)
+    a = client.get_attachment(attachment_id)
+    content_id = a.page_id or a.blog_post_id or a.custom_content_id
+    if content_id is None:
+        raise ValueError(f"attachment {attachment_id} has no containing content")
+    download = client.get_attachment_content(content_id, attachment_id)
+    return write_temp(download.data, a.title or download.fallback_name)
 
 
 def search_users(
