@@ -72,7 +72,7 @@ def test_get_project_delegates(mocker: MockerFixture):
 def test_get_sprint_converts_id_to_int(mocker: MockerFixture):
     get_sprint = mocker.patch.object(client, "get_sprint", return_value=object())
 
-    tools.get_sprint("99")
+    tools.get_sprint(99)
 
     assert get_sprint.call_args == call(99)
 
@@ -102,7 +102,7 @@ def test_get_board_issues_converts_id(mocker: MockerFixture):
     results = SearchResults(issues=[IssueBean(key="A-1")])
     board_issues = mocker.patch.object(client, "get_board_issues", return_value=results)
 
-    out = tools.get_board_issues("7")
+    out = tools.get_board_issues(7)
 
     assert board_issues.call_args == call(
         7, start_at=0, max_results=50, fields=tools._SEARCH_ISSUE_FIELDS
@@ -534,11 +534,11 @@ def test_change_issue_type_target_without_hierarchy_level(mocker: MockerFixture)
         (lambda: tools.remove_watcher("A-1", "acc"), "remove_watcher"),
         (lambda: tools.delete_worklog("A-1", "w1"), "delete_worklog"),
         (lambda: tools.delete_version("v1"), "delete_version"),
-        (lambda: tools.delete_sprint("1"), "delete_sprint"),
+        (lambda: tools.delete_sprint(1), "delete_sprint"),
         (lambda: tools.move_to_backlog(["A-1"]), "move_to_backlog"),
         (lambda: tools.link_to_epic("E-1", ["A-1"]), "link_to_epic"),
-        (lambda: tools.move_issues_to_sprint("1", ["A-1"]), "move_issues_to_sprint"),
-        (lambda: tools.update_sprint("1", name="S2"), "update_sprint"),
+        (lambda: tools.move_issues_to_sprint(1, ["A-1"]), "move_issues_to_sprint"),
+        (lambda: tools.update_sprint(1, name="S2"), "update_sprint"),
         (lambda: tools.edit_comment("A-1", "c1", "x"), "update_comment"),
         (
             lambda: tools.create_remote_issue_link("A-1", "u", "t"),
@@ -568,7 +568,7 @@ def test_create_version_returns_id(mocker: MockerFixture):
 def test_create_sprint_returns_id(mocker: MockerFixture):
     mocker.patch.object(client, "create_sprint", return_value=SprintBean(id=42))
 
-    assert tools.create_sprint("7", "S1") == "42"
+    assert tools.create_sprint(7, "S1") == "42"
 
 
 # ---------------------------------------------------------------------------
@@ -686,7 +686,7 @@ def test_upload_attachment_reads_file_then_calls_client(
         ),
         (lambda: tools.get_epic("E-1"), "get_epic", call("E-1")),
         (
-            lambda: tools.list_sprints("7", state="active", limit=10),
+            lambda: tools.list_sprints(7, state="active", limit=10),
             "list_sprints",
             call(7, state="active", start_at=0, max_results=10),
         ),
@@ -708,8 +708,8 @@ def test_reader_delegates_to_client(
 @pytest.mark.parametrize(
     ("invoke", "client_attr", "expected_id"),
     [
-        (lambda: tools.get_backlog_issues("7"), "get_backlog_issues", 7),
-        (lambda: tools.get_sprint_issues("9"), "get_sprint_issues", 9),
+        (lambda: tools.get_backlog_issues(7), "get_backlog_issues", 7),
+        (lambda: tools.get_sprint_issues(9), "get_sprint_issues", 9),
         (lambda: tools.get_epic_issues("E-1"), "get_epic_issues", "E-1"),
     ],
 )

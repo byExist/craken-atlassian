@@ -593,13 +593,13 @@ def list_boards(
 
 
 def get_board_issues(
-    board_id: Annotated[str, Field(description="Board id.")],
+    board_id: Annotated[int, Field(description="Board id.")],
     start_at: Offset = 0,
     limit: Limit = 50,
 ) -> SearchResults:
     """Get issues on a board. Description is omitted; use get_issue for full detail."""
     return client.get_board_issues(
-        int(board_id),
+        board_id,
         start_at=start_at,
         max_results=limit,
         fields=_SEARCH_ISSUE_FIELDS,
@@ -607,13 +607,13 @@ def get_board_issues(
 
 
 def get_backlog_issues(
-    board_id: Annotated[str, Field(description="Board id.")],
+    board_id: Annotated[int, Field(description="Board id.")],
     start_at: Offset = 0,
     limit: Limit = 50,
 ) -> SearchResults:
     """Get backlog issues (not in any sprint) on a board. Description is omitted; use get_issue for full detail."""
     return client.get_backlog_issues(
-        int(board_id),
+        board_id,
         start_at=start_at,
         max_results=limit,
         fields=_SEARCH_ISSUE_FIELDS,
@@ -645,7 +645,7 @@ def get_epic(
 
 
 def list_sprints(
-    board_id: Annotated[str, Field(description="Board id.")],
+    board_id: Annotated[int, Field(description="Board id.")],
     state: Annotated[
         Literal["active", "closed", "future"] | None,
         Field(description="Filter by sprint state."),
@@ -655,7 +655,7 @@ def list_sprints(
 ) -> SprintPage:
     """List a board's sprints."""
     return client.list_sprints(
-        int(board_id),
+        board_id,
         state=state,
         start_at=start_at,
         max_results=limit,
@@ -663,13 +663,13 @@ def list_sprints(
 
 
 def get_sprint_issues(
-    sprint_id: Annotated[str, Field(description="Sprint id.")],
+    sprint_id: Annotated[int, Field(description="Sprint id.")],
     start_at: Offset = 0,
     limit: Limit = 50,
 ) -> SearchResults:
     """Get issues in a sprint. Description is omitted; use get_issue for full detail."""
     return client.get_sprint_issues(
-        int(sprint_id),
+        sprint_id,
         start_at=start_at,
         max_results=limit,
         fields=_SEARCH_ISSUE_FIELDS,
@@ -677,23 +677,23 @@ def get_sprint_issues(
 
 
 def get_sprint(
-    sprint_id: Annotated[str, Field(description="Sprint id.")],
+    sprint_id: Annotated[int, Field(description="Sprint id.")],
 ) -> SprintBean:
     """Get a sprint's details."""
-    return client.get_sprint(int(sprint_id))
+    return client.get_sprint(sprint_id)
 
 
 def move_issues_to_sprint(
-    sprint_id: Annotated[str, Field(description="Sprint id.")],
+    sprint_id: Annotated[int, Field(description="Sprint id.")],
     issue_keys: Annotated[list[str], Field(description="Issue keys to move.")],
 ) -> Ok:
     """Move issues to a sprint."""
-    client.move_issues_to_sprint(int(sprint_id), issue_keys=issue_keys)
+    client.move_issues_to_sprint(sprint_id, issue_keys=issue_keys)
     return "ok"
 
 
 def create_sprint(
-    board_id: Annotated[str, Field(description="Board id.")],
+    board_id: Annotated[int, Field(description="Board id.")],
     name: Annotated[str, Field(description="Sprint name.")],
     goal: Annotated[str | None, Field(description="Sprint goal.")] = None,
     start_date: Annotated[str | None, Field(description=_SPRINT_DATE)] = None,
@@ -701,7 +701,7 @@ def create_sprint(
 ) -> str:
     """Create a sprint; returns the sprint id."""
     sprint = client.create_sprint(
-        int(board_id),
+        board_id,
         name,
         goal=goal,
         start_date=start_date,
@@ -711,7 +711,7 @@ def create_sprint(
 
 
 def update_sprint(
-    sprint_id: Annotated[str, Field(description="Sprint id.")],
+    sprint_id: Annotated[int, Field(description="Sprint id.")],
     name: Annotated[str | None, Field(description="New name.")] = None,
     state: Annotated[
         Literal["active", "closed", "future"] | None,
@@ -723,7 +723,7 @@ def update_sprint(
 ) -> Ok:
     """Update a sprint."""
     client.update_sprint(
-        int(sprint_id),
+        sprint_id,
         name=name,
         state=state,
         goal=goal,
@@ -734,10 +734,10 @@ def update_sprint(
 
 
 def delete_sprint(
-    sprint_id: Annotated[str, Field(description="Sprint id.")],
+    sprint_id: Annotated[int, Field(description="Sprint id.")],
 ) -> Ok:
     """Delete a sprint."""
-    client.delete_sprint(int(sprint_id))
+    client.delete_sprint(sprint_id)
     return "ok"
 
 
