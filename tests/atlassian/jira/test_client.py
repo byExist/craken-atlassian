@@ -767,6 +767,29 @@ def test_delete_comment_issues_delete(jira_api: MockServer):
     assert jira_api.last.url.path == "/rest/api/3/issue/A-1/comment/c1"
 
 
+def test_get_worklogs_keeps_id_and_author(jira_api: MockServer):
+    jira_api.add(
+        "GET",
+        "/rest/api/3/issue/A-1/worklog",
+        json={
+            "worklogs": [
+                {
+                    "id": "w1",
+                    "author": {"accountId": "acc-1", "displayName": "Dev"},
+                    "timeSpent": "1h",
+                }
+            ],
+            "total": 1,
+        },
+    )
+
+    page = client.get_worklogs("A-1")
+
+    assert page.worklogs[0].id == "w1"
+    assert page.worklogs[0].author is not None
+    assert page.worklogs[0].author.account_id == "acc-1"
+
+
 def test_add_worklog_includes_comment(jira_api: MockServer):
     jira_api.add("POST", "/rest/api/3/issue/A-1/worklog", json={})
 

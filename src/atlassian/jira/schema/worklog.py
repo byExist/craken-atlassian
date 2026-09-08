@@ -2,6 +2,7 @@
 
 from atlassian.jira.schema.adf import ADF
 from atlassian.jira.schema.base import JiraModel
+from atlassian.jira.schema.user import User
 
 
 class Worklog(JiraModel):
@@ -10,6 +11,8 @@ class Worklog(JiraModel):
     OpenAPI: Worklog — POST /rest/api/3/issue/{id}/worklog response
     """
 
+    id: str | None = None
+    author: User | None = None
     started: str | None = None
     time_spent: str | None = None
     comment: ADF | str | None = None
