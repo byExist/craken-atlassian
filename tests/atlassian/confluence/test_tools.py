@@ -242,10 +242,27 @@ def test_create_page_rejects_content_and_from_file():
 def update_page_at_v5(mocker: MockerFixture) -> MagicMock:
     """Page currently at version 5; return the update mock to assert against."""
     mocker.patch.object(
-        client, "get_page", return_value=Page(id="p1", version=Version(number=5))
+        client,
+        "get_page",
+        return_value=Page(id="p1", title="Old", version=Version(number=5)),
     )
     mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
     return mocker.patch.object(client, "update_page")
+
+
+def test_update_page_keeps_current_title_when_omitted(update_page_at_v5: MagicMock):
+    assert tools.update_page("p1", content="new") == "ok"
+    assert update_page_at_v5.call_args == call(
+        "p1", "Old", body={"adf": 1}, version_number=6
+    )
+
+
+def test_update_page_refuses_when_no_title_anywhere(mocker: MockerFixture):
+    mocker.patch.object(client, "get_page", return_value=Page(id="p1"))
+    mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
+
+    with pytest.raises(ValueError, match="no title"):
+        tools.update_page("p1", content="new")
 
 
 def test_update_page_increments_version(update_page_at_v5: MagicMock):

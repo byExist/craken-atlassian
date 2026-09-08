@@ -70,6 +70,15 @@ def _resolve_space_id(space: str) -> str:
     return space_id
 
 
+def _title_for_update(given: str | None, current: str | None, *, what: str) -> str:
+    """The API requires a title on every update; fall back to the current one."""
+    if given is not None:
+        return given
+    if current is None:
+        raise ValueError(f"{what} has no title; provide one")
+    return current
+
+
 # --- User ---
 
 
@@ -260,7 +269,9 @@ def create_page(
 
 def update_page(
     page_id: PageId,
-    title: Annotated[str, Field(description="Page title.")],
+    title: Annotated[
+        str | None, Field(description="New title; omit to keep the current one.")
+    ] = None,
     content: Annotated[str | None, Field(description="Markdown.")] = None,
     from_file: Annotated[
         str | None, Field(description="Absolute path to read the content from.")
@@ -283,7 +294,7 @@ def update_page(
     current = client.get_page(page_id)
     client.update_page(
         page_id,
-        title,
+        _title_for_update(title, current.title, what="page"),
         body=parse(content),
         version_number=_next_version(
             current.version, expected_version, what="page", refetch="get_page"
@@ -353,7 +364,9 @@ def create_blog_post(
 
 def update_blog_post(
     blog_post_id: Annotated[str, Field(description="Blog post id.")],
-    title: Annotated[str, Field(description="Blog post title.")],
+    title: Annotated[
+        str | None, Field(description="New title; omit to keep the current one.")
+    ] = None,
     content: Annotated[str | None, Field(description="Markdown.")] = None,
     from_file: Annotated[
         str | None, Field(description="Absolute path to read the content from.")
@@ -376,7 +389,7 @@ def update_blog_post(
     current = client.get_blog_post(blog_post_id)
     client.update_blog_post(
         blog_post_id,
-        title,
+        _title_for_update(title, current.title, what="blog post"),
         body=parse(content),
         version_number=_next_version(
             current.version, expected_version, what="blog post", refetch="get_blog_post"
