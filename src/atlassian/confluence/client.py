@@ -690,7 +690,7 @@ def update_task(task_id: str, status: str) -> Task:
 
 def upload_attachment(
     page_id: str, *, filename: str, data: bytes, comment: str | None = None
-) -> Attachment:
+) -> list[Attachment]:
     client = _get_client()
     files = {"file": (filename, data)}
     form_data: dict[str, str] = {"minorEdit": "true"}
@@ -706,8 +706,7 @@ def upload_attachment(
         },
     )
     resp.raise_for_status()
-    results = resp.json().get("results", [])
-    return Attachment.model_validate(results[0]) if results else Attachment()
+    return [Attachment.model_validate(item) for item in resp.json().get("results", [])]
 
 
 def move_page(page_id: str, position: str, target_id: str) -> None:

@@ -16,6 +16,7 @@ from pytest_mock import MockerFixture
 from atlassian.confluence import client, tools
 from atlassian import markdown
 from atlassian.download import Download
+from atlassian.confluence.schema.attachment import Attachment
 from atlassian.confluence.schema.blog_post import BlogPost, MultiEntityResultBlogPost
 from atlassian.confluence.schema.comment import Comment, MultiEntityResultComment
 from atlassian.confluence.schema.inline_comment import (
@@ -367,9 +368,13 @@ def test_resolve_inline_comment_refuses_without_body(mocker: MockerFixture):
 def test_upload_attachment_reads_file(mocker: MockerFixture, tmp_path: Path):
     f = tmp_path / "f.bin"
     f.write_bytes(b"file-bytes")
-    upload = mocker.patch.object(client, "upload_attachment")
+    upload = mocker.patch.object(
+        client, "upload_attachment", return_value=[Attachment(id="att-1")]
+    )
 
-    assert tools.upload_attachment("p1", str(f), comment="c") == "ok"
+    result = tools.upload_attachment("p1", str(f), comment="c")
+
+    assert [a.id for a in result] == ["att-1"]
     assert upload.call_args == call(
         "p1", filename="f.bin", data=b"file-bytes", comment="c"
     )

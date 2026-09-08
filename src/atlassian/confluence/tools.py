@@ -9,7 +9,10 @@ from pydantic import Field
 from atlassian.confluence import client
 from atlassian.confluence.schema.ancestor import MultiEntityResultAncestor
 from atlassian.confluence.schema.analytics import ContentViews
-from atlassian.confluence.schema.attachment import MultiEntityResultAttachment
+from atlassian.confluence.schema.attachment import (
+    Attachment,
+    MultiEntityResultAttachment,
+)
 from atlassian.confluence.schema.blog_post import BlogPost, MultiEntityResultBlogPost
 from atlassian.confluence.schema.comment import MultiEntityResultComment
 from atlassian.confluence.schema.inline_comment import MultiEntityResultInlineComment
@@ -571,11 +574,12 @@ def upload_attachment(
     page_id: PageId,
     file_path: Annotated[str, Field(description="Absolute path to the file.")],
     comment: Annotated[str | None, Field(description="Optional comment.")] = None,
-) -> Ok:
+) -> list[Attachment]:
     """Attach a local file to a page."""
     data, filename = read_bytes(file_path)
-    client.upload_attachment(page_id, filename=filename, data=data, comment=comment)
-    return "ok"
+    return client.upload_attachment(
+        page_id, filename=filename, data=data, comment=comment
+    )
 
 
 def delete_attachment(

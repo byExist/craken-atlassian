@@ -605,7 +605,7 @@ def test_upload_attachment_uses_multipart_and_nocheck(confluence_api: MockServer
     assert req.headers["X-Atlassian-Token"] == "nocheck"
     assert b"f.png" in req.content
     assert b"minorEdit" in req.content
-    assert result.id == "att-1"
+    assert [a.id for a in result] == ["att-1"]
 
 
 def test_upload_attachment_handles_empty_results(confluence_api: MockServer):
@@ -613,9 +613,7 @@ def test_upload_attachment_handles_empty_results(confluence_api: MockServer):
         "POST", "/wiki/rest/api/content/p1/child/attachment", json={"results": []}
     )
 
-    result = client.upload_attachment("p1", filename="f.png", data=b"bytes")
-
-    assert result.id is None
+    assert client.upload_attachment("p1", filename="f.png", data=b"bytes") == []
 
 
 def test_move_page_uses_position_and_target_path(confluence_api: MockServer):
