@@ -18,6 +18,7 @@ from atlassian.confluence.schema.page import (
     MultiEntityResultChildPage,
     MultiEntityResultPage,
     Page,
+    Version,
 )
 from atlassian.confluence.schema.search import SearchResults
 from atlassian.confluence.schema.space import MultiEntityResultSpace, Space
@@ -39,6 +40,23 @@ CommentId: TypeAlias = Annotated[str, Field(description="Comment id.")]
 Cursor: TypeAlias = Annotated[
     str | None, Field(description="Pagination cursor from a prior result.")
 ]
+
+
+def _next_version(
+    current: Version | None, expected: int | None, *, what: str, refetch: str
+) -> int:
+    """Version number to submit for an update: current + 1, after the optimistic-lock check.
+
+    Every versioned Confluence resource (page, blog post, comment, inline
+    comment) follows the same rule: a PUT must carry exactly current + 1.
+    """
+    number = current.number if current and current.number is not None else 0
+    if expected is not None and number != expected:
+        raise ValueError(
+            f"version conflict: {what} is now at {number}, but your edits are based "
+            f"on {expected}; re-fetch with {refetch} and reapply"
+        )
+    return number + 1
 
 
 # --- User ---
@@ -257,17 +275,13 @@ def update_page(
     if content is None:
         raise ValueError("provide either content or from_file")
     current = client.get_page(page_id)
-    current_version = current.version.number if current.version else 0
-    if expected_version is not None and current_version != expected_version:
-        raise ValueError(
-            f"version conflict: page is now at {current_version}, but your edits are based "
-            f"on {expected_version}; re-fetch with get_page and reapply"
-        )
     client.update_page(
         page_id,
         title,
         body=parse(content),
-        version_number=(current_version or 0) + 1,
+        version_number=_next_version(
+            current.version, expected_version, what="page", refetch="get_page"
+        ),
     )
     return "ok"
 
@@ -354,17 +368,13 @@ def update_blog_post(
     if content is None:
         raise ValueError("provide either content or from_file")
     current = client.get_blog_post(blog_post_id)
-    current_version = current.version.number if current.version else 0
-    if expected_version is not None and current_version != expected_version:
-        raise ValueError(
-            f"version conflict: blog post is now at {current_version}, but your edits are based "
-            f"on {expected_version}; re-fetch with get_blog_post and reapply"
-        )
     client.update_blog_post(
         blog_post_id,
         title,
         body=parse(content),
-        version_number=(current_version or 0) + 1,
+        version_number=_next_version(
+            current.version, expected_version, what="blog post", refetch="get_blog_post"
+        ),
     )
     return "ok"
 
@@ -404,11 +414,13 @@ def edit_comment(
     content: Annotated[str, Field(description="Markdown.")],
 ) -> Ok:
     """Edit a footer comment."""
-    version = client.get_comment_version(comment_id)
+    current = client.get_comment(comment_id)
     client.edit_comment(
         comment_id,
         body=parse(content),
-        version_number=version + 1,
+        version_number=_next_version(
+            current.version, None, what="comment", refetch="get_comments"
+        ),
     )
     return "ok"
 
@@ -475,7 +487,17 @@ def create_inline_comment(
 
 def resolve_inline_comment(comment_id: CommentId) -> Ok:
     """Resolve an inline comment."""
-    client.resolve_inline_comment(comment_id)
+    current = client.get_inline_comment(comment_id)
+    if not isinstance(current.body, dict):
+        raise ValueError(f"inline comment {comment_id} has no body to carry over")
+    client.update_inline_comment(
+        comment_id,
+        body=current.body,
+        version_number=_next_version(
+            current.version, None, what="inline comment", refetch="get_inline_comments"
+        ),
+        resolved=True,
+    )
     return "ok"
 
 

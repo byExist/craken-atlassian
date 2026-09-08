@@ -512,14 +512,13 @@ def add_comment(page_id: str, body: ADF) -> Comment:
     return Comment.model_validate(resp.json())
 
 
-def get_comment_version(comment_id: str) -> int:
-    """Get the current version number of a footer comment."""
+def get_comment(comment_id: str) -> Comment:
     resp = _get_client().get(
         f"/wiki/api/v2/footer-comments/{comment_id}",
         params={"body-format": "atlas_doc_format"},
     )
     resp.raise_for_status()
-    return resp.json().get("version", {}).get("number", 1)
+    return Comment.model_validate(resp.json())
 
 
 def edit_comment(
@@ -593,18 +592,29 @@ def create_inline_comment(
     return InlineComment.model_validate(resp.json())
 
 
-def resolve_inline_comment(comment_id: str) -> InlineComment:
-    current_resp = _get_client().get(
+def get_inline_comment(comment_id: str) -> InlineComment:
+    resp = _get_client().get(
         f"/wiki/api/v2/inline-comments/{comment_id}",
         params={"body-format": "atlas_doc_format"},
     )
-    current_resp.raise_for_status()
-    current_data = current_resp.json()
-    current_version = current_data.get("version", {}).get("number", 1)
+    resp.raise_for_status()
+    return InlineComment.model_validate(resp.json())
+
+
+def update_inline_comment(
+    comment_id: str,
+    *,
+    body: ADF,
+    version_number: int,
+    resolved: bool,
+) -> InlineComment:
     payload: dict[str, Any] = {
-        "version": {"number": current_version + 1},
-        "body": current_data.get("body", {}),
-        "resolutionStatus": "resolved",
+        "version": {"number": version_number},
+        "body": {
+            "representation": "atlas_doc_format",
+            "value": json.dumps(body),
+        },
+        "resolved": resolved,
     }
     resp = _get_client().put(
         f"/wiki/api/v2/inline-comments/{comment_id}",

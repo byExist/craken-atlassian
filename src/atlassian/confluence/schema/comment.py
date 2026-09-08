@@ -2,6 +2,7 @@
 
 from atlassian.confluence.schema.adf import Body
 from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
+from atlassian.confluence.schema.page import Version
 
 
 class Comment(ConfluenceModel):
@@ -12,6 +13,7 @@ class Comment(ConfluenceModel):
 
     id: str | None = None
     parent_comment_id: str | None = None
+    version: Version | None = None
     body: Body = None
 
 

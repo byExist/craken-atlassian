@@ -283,12 +283,39 @@ def test_update_blog_post_rejects_stale_version(mocker: MockerFixture):
 
 
 def test_edit_comment_bumps_fetched_version(mocker: MockerFixture):
-    mocker.patch.object(client, "get_comment_version", return_value=7)
+    mocker.patch.object(
+        client, "get_comment", return_value=Comment(id="c1", version=Version(number=7))
+    )
     edit = mocker.patch.object(client, "edit_comment")
     mocker.patch.object(markdown, "to_adf", return_value={"adf": 1})
 
     assert tools.edit_comment("c1", "updated") == "ok"
     assert edit.call_args == call("c1", body={"adf": 1}, version_number=8)
+
+
+def test_resolve_inline_comment_carries_body_and_bumps_version(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "get_inline_comment",
+        return_value=InlineComment(
+            id="i1", body={"type": "doc"}, version=Version(number=3)
+        ),
+    )
+    update = mocker.patch.object(client, "update_inline_comment")
+
+    assert tools.resolve_inline_comment("i1") == "ok"
+    assert update.call_args == call(
+        "i1", body={"type": "doc"}, version_number=4, resolved=True
+    )
+
+
+def test_resolve_inline_comment_refuses_without_body(mocker: MockerFixture):
+    mocker.patch.object(
+        client, "get_inline_comment", return_value=InlineComment(id="i1", body=None)
+    )
+
+    with pytest.raises(ValueError, match="no body"):
+        tools.resolve_inline_comment("i1")
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +366,6 @@ def test_restore_page_version_defaults_message(mocker: MockerFixture):
     [
         (lambda: tools.delete_comment("c1"), "delete_comment"),
         (lambda: tools.create_inline_comment("p1", "note"), "create_inline_comment"),
-        (lambda: tools.resolve_inline_comment("i1"), "resolve_inline_comment"),
         (lambda: tools.delete_inline_comment("i1"), "delete_inline_comment"),
         (lambda: tools.add_label("p1", "x"), "add_label"),
         (lambda: tools.remove_label("p1", "x"), "remove_label"),

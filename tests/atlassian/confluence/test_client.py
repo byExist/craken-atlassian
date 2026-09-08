@@ -472,12 +472,18 @@ def test_add_comment_wraps_body_and_parses_response(confluence_api: MockServer):
     assert result.body == {"type": "doc"}
 
 
-def test_get_comment_version_reads_number(confluence_api: MockServer):
+def test_get_comment_parses_version_and_body(confluence_api: MockServer):
     confluence_api.add(
-        "GET", "/wiki/api/v2/footer-comments/c1", json={"version": {"number": 9}}
+        "GET",
+        "/wiki/api/v2/footer-comments/c1",
+        json={"id": "c1", "version": {"number": 9}, "body": _adf_body({"type": "doc"})},
     )
 
-    assert client.get_comment_version("c1") == 9
+    comment = client.get_comment("c1")
+
+    assert confluence_api.last.url.params["body-format"] == "atlas_doc_format"
+    assert comment.version is not None and comment.version.number == 9
+    assert comment.body == {"type": "doc"}
 
 
 def test_edit_comment_sends_version(confluence_api: MockServer):
@@ -530,23 +536,36 @@ def test_create_inline_comment_omits_empty_properties(confluence_api: MockServer
     assert "inlineCommentProperties" not in confluence_api.body(confluence_api.last)
 
 
-def test_resolve_inline_comment_bumps_version_and_resolves(confluence_api: MockServer):
+def test_get_inline_comment_parses_version_and_body(confluence_api: MockServer):
     confluence_api.add(
         "GET",
         "/wiki/api/v2/inline-comments/i1",
-        json={"version": {"number": 3}, "body": _adf_body({"type": "doc"})},
+        json={"id": "i1", "version": {"number": 3}, "body": _adf_body({"type": "doc"})},
     )
+
+    comment = client.get_inline_comment("i1")
+
+    assert confluence_api.last.url.params["body-format"] == "atlas_doc_format"
+    assert comment.version is not None and comment.version.number == 3
+    assert comment.body == {"type": "doc"}
+
+
+def test_update_inline_comment_sends_version_body_and_resolved(
+    confluence_api: MockServer,
+):
     confluence_api.add(
         "PUT", "/wiki/api/v2/inline-comments/i1", json={"id": "i1", "body": None}
     )
 
-    client.resolve_inline_comment("i1")
-
-    body = confluence_api.body(
-        confluence_api.request("PUT", "/wiki/api/v2/inline-comments/i1")
+    client.update_inline_comment(
+        "i1", body={"type": "doc"}, version_number=4, resolved=True
     )
+
+    body = confluence_api.body(confluence_api.last)
     assert body["version"] == {"number": 4}
-    assert body["resolutionStatus"] == "resolved"
+    assert body["resolved"] is True
+    assert body["body"]["representation"] == "atlas_doc_format"
+    assert json.loads(body["body"]["value"]) == {"type": "doc"}
 
 
 def test_delete_attachment_issues_delete(confluence_api: MockServer):

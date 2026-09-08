@@ -2,6 +2,7 @@
 
 from atlassian.confluence.schema.adf import Body
 from atlassian.confluence.schema.base import ConfluenceModel, CursorPage
+from atlassian.confluence.schema.page import Version
 
 
 class InlineCommentProperties(ConfluenceModel):
@@ -26,6 +27,7 @@ class InlineComment(ConfluenceModel):
     title: str | None = None
     parent_comment_id: str | None = None
     resolution_status: str | None = None
+    version: Version | None = None
     body: Body = None
     properties: InlineCommentProperties | None = None
 
