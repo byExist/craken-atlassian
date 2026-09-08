@@ -23,6 +23,7 @@ import httpx
 
 from atlassian.hooks import error_hook
 from atlassian.config import get_auth
+from atlassian.download import Download
 from atlassian.confluence.schema.adf import ADF
 from atlassian.confluence.schema.ancestor import Ancestor, MultiEntityResultAncestor
 from atlassian.confluence.schema.analytics import ContentViews
@@ -179,14 +180,13 @@ def get_page_views(page_id: str) -> ContentViews:
     return ContentViews.model_validate(resp.json())
 
 
-def get_attachment_content(page_id: str, attachment_id: str) -> tuple[bytes, str]:
+def get_attachment_content(page_id: str, attachment_id: str) -> Download:
     resp = _get_client().get(
         f"/wiki/rest/api/content/{page_id}/child/attachment/{attachment_id}/download",
         follow_redirects=True,
     )
     resp.raise_for_status()
-    content_type = resp.headers.get("content-type", "application/octet-stream")
-    return resp.content, content_type
+    return Download.from_response(resp)
 
 
 # ---------------------------------------------------------------------------

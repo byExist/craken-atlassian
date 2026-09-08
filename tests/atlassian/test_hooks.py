@@ -153,10 +153,10 @@ def test_confluence_download_follows_redirect_to_media_host(
         headers={"content-type": "image/png"},
     )
 
-    data, content_type = client.get_attachment_content("10", "att-1")
+    download = client.get_attachment_content("10", "att-1")
 
-    assert data == b"\x89PNG"
-    assert content_type == "image/png"
+    assert download.data == b"\x89PNG"
+    assert download.content_type == "image/png"
     assert confluence_api.last.url.host == "api.media.atlassian.com"
 
 
@@ -176,8 +176,8 @@ def test_jira_download_follows_redirect_to_media_host(jira_api: MockServer):
         headers={"content-type": "application/pdf"},
     )
 
-    data, content_type = client.get_attachment_content("42")
+    download = client.get_attachment_content("42")
 
-    assert data == b"%PDF"
-    assert content_type == "application/pdf"
+    assert download.data == b"%PDF"
+    assert download.content_type == "application/pdf"
     assert jira_api.last.url.host == "api.media.atlassian.com"

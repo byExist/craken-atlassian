@@ -7,8 +7,6 @@ out of context and turns edits into deterministic file operations instead of
 full-document regeneration.
 """
 
-import mimetypes
-import os
 import tempfile
 from pathlib import Path
 
@@ -25,18 +23,19 @@ def write_body(path: str, body: str) -> str:
     return str(p)
 
 
-def write_temp(data: bytes, content_type: str) -> str:
-    """Write binary ``data`` to a uniquely-named temp file; return its path.
+def write_temp(data: bytes, name: str) -> str:
+    """Write binary ``data`` as ``name`` inside a fresh temp directory; return its path.
 
-    The extension is derived from ``content_type`` (e.g. ``image/png`` → ``.png``)
-    so the model's image support and other readers can recognize the file. The
-    file persists until the OS cleans its temp dir; copy it if you need to keep it.
+    A new directory per call keeps the original filename without collisions.
+    The file persists until the OS cleans its temp dir; copy it to keep it.
     """
-    ext = mimetypes.guess_extension((content_type or "").split(";")[0].strip()) or ""
-    fd, path = tempfile.mkstemp(suffix=ext)
-    with os.fdopen(fd, "wb") as f:
-        f.write(data)
-    return path
+    # Only the final component is used, so a server-supplied name can't escape the temp dir.
+    safe = Path(name).name
+    if safe in ("", ".", ".."):
+        safe = "attachment"
+    path = Path(tempfile.mkdtemp()) / safe
+    path.write_bytes(data)
+    return str(path)
 
 
 def read_body(path: str) -> str:

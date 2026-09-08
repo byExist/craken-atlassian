@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+import pytest
+
 from pytest_mock import MockerFixture
 
 from atlassian.files import read_body, read_bytes, write_body, write_temp
@@ -42,33 +44,41 @@ def test_read_body_roundtrips_with_write_body(tmp_path: Path):
     assert read_body(str(target)) == "round-trip ·"
 
 
-def test_write_temp_derives_extension_from_content_type():
-    path = write_temp(b"\x89PNG\r\n", "image/png")
+def test_write_temp_keeps_name_in_fresh_dir():
+    first = write_temp(b"a", "shot.png")
+    second = write_temp(b"b", "shot.png")
 
     try:
-        assert path.endswith(".png")
-        assert Path(path).read_bytes() == b"\x89PNG\r\n"
+        assert Path(first).name == "shot.png"
+        assert Path(second).name == "shot.png"
+        assert first != second
+        assert Path(first).read_bytes() == b"a"
     finally:
-        Path(path).unlink(missing_ok=True)
+        for p in (first, second):
+            Path(p).unlink(missing_ok=True)
+            Path(p).parent.rmdir()
 
 
-def test_write_temp_strips_charset_parameter():
-    path = write_temp(b"hi", "text/plain; charset=utf-8")
+def test_write_temp_strips_directory_components_from_name():
+    path = write_temp(b"x", "../../etc/passwd")
 
     try:
-        assert path.endswith(".txt")
+        assert Path(path).name == "passwd"
+        assert Path(path).parent != Path("/etc")
     finally:
         Path(path).unlink(missing_ok=True)
+        Path(path).parent.rmdir()
 
 
-def test_write_temp_handles_unknown_content_type():
-    path = write_temp(b"data", "")
+@pytest.mark.parametrize("name", ["", ".", ".."])
+def test_write_temp_replaces_unusable_name(name: str):
+    path = write_temp(b"x", name)
 
     try:
-        assert Path(path).suffix == ""
-        assert Path(path).read_bytes() == b"data"
+        assert Path(path).name == "attachment"
     finally:
         Path(path).unlink(missing_ok=True)
+        Path(path).parent.rmdir()
 
 
 def test_read_bytes_returns_data_and_filename(tmp_path: Path):

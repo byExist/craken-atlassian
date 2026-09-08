@@ -17,6 +17,7 @@ import httpx
 
 from atlassian.hooks import error_hook
 from atlassian.config import get_auth
+from atlassian.download import Download
 
 from atlassian.jira.schema.adf import ADF
 from atlassian.jira.schema.attachment import Attachment
@@ -167,13 +168,13 @@ def get_watchers(issue_key: str) -> Watchers:
     return Watchers.model_validate(resp.json())
 
 
-def get_attachment_content(attachment_id: str) -> tuple[bytes, str]:
+def get_attachment_content(attachment_id: str) -> Download:
     resp = _get_client().get(
         f"/rest/api/3/attachment/content/{attachment_id}",
         follow_redirects=True,
     )
     resp.raise_for_status()
-    return resp.content, resp.headers.get("content-type", "application/octet-stream")
+    return Download.from_response(resp)
 
 
 def get_issue_type_metadata(

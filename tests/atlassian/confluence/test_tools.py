@@ -14,6 +14,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from atlassian.confluence import client, tools
+from atlassian.download import Download
 from atlassian.confluence.schema.blog_post import BlogPost, MultiEntityResultBlogPost
 from atlassian.confluence.schema.comment import Comment, MultiEntityResultComment
 from atlassian.confluence.schema.inline_comment import (
@@ -305,14 +306,16 @@ def test_upload_attachment_reads_file(mocker: MockerFixture, tmp_path: Path):
     )
 
 
-def test_download_attachment_writes_temp(mocker: MockerFixture):
+def test_download_attachment_keeps_original_filename(mocker: MockerFixture):
     mocker.patch.object(
-        client, "get_attachment_content", return_value=(b"\x89PNG", "image/png")
+        client,
+        "get_attachment_content",
+        return_value=Download(b"\x89PNG", "image/png", "diagram.png"),
     )
 
     path = tools.download_attachment("p1", "att-1")
     try:
-        assert path.endswith(".png")
+        assert Path(path).name == "diagram.png"
     finally:
         Path(path).unlink(missing_ok=True)
 

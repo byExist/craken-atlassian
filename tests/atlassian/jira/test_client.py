@@ -133,13 +133,30 @@ def test_get_attachment_content_returns_bytes_and_content_type(jira_api: MockSer
         "GET",
         "/rest/api/3/attachment/content/42",
         content=b"\x89PNG",
-        headers={"content-type": "image/png"},
+        headers={
+            "content-type": "image/png",
+            "content-disposition": 'attachment; filename="shot.png"',
+        },
     )
 
-    data, content_type = client.get_attachment_content("42")
+    download = client.get_attachment_content("42")
 
-    assert data == b"\x89PNG"
-    assert content_type == "image/png"
+    assert download.data == b"\x89PNG"
+    assert download.content_type == "image/png"
+    assert download.filename == "shot.png"
+
+
+def test_get_attachment_content_without_disposition_has_no_filename(
+    jira_api: MockServer,
+):
+    jira_api.add(
+        "GET",
+        "/rest/api/3/attachment/content/42",
+        content=b"raw",
+        headers={"content-type": "application/octet-stream"},
+    )
+
+    assert client.get_attachment_content("42").filename is None
 
 
 def test_list_projects_returns_page_bean(jira_api: MockServer):

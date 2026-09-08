@@ -391,9 +391,9 @@ def list_issue_types() -> list[IssueTypeDetails]:
 def download_attachment(
     attachment_id: Annotated[str, Field(description="Attachment id.")],
 ) -> str:
-    """Download an attachment to a temp file; returns the saved path. The file never enters the model's context — copy it elsewhere to keep it."""
-    data, content_type = client.get_attachment_content(attachment_id)
-    return write_temp(data, content_type)
+    """Download an attachment to a temp dir under its original filename; returns the saved path. The file never enters the model's context — copy it elsewhere to keep it."""
+    download = client.get_attachment_content(attachment_id)
+    return write_temp(download.data, download.name)
 
 
 def upload_attachment(

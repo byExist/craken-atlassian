@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_mock import MockerFixture
 
+from atlassian.download import Download
 from atlassian.jira import client, tools
 from atlassian.jira.schema.comment import Comment, PageOfComments
 from atlassian.jira.schema.common import IssueTypeDetails
@@ -574,9 +575,28 @@ def test_create_sprint_returns_id(mocker: MockerFixture):
 # ---------------------------------------------------------------------------
 
 
-def test_download_attachment_writes_temp_file(mocker: MockerFixture):
+def test_download_attachment_keeps_original_filename(mocker: MockerFixture):
     mocker.patch.object(
-        client, "get_attachment_content", return_value=(b"\x89PNG", "image/png")
+        client,
+        "get_attachment_content",
+        return_value=Download(b"\x89PNG", "image/png", "shot.png"),
+    )
+
+    from pathlib import Path
+
+    path = tools.download_attachment("42")
+    try:
+        assert Path(path).name == "shot.png"
+        assert Path(path).read_bytes() == b"\x89PNG"
+    finally:
+        Path(path).unlink(missing_ok=True)
+
+
+def test_download_attachment_falls_back_to_temp_name(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "get_attachment_content",
+        return_value=Download(b"\x89PNG", "image/png", None),
     )
 
     from pathlib import Path
@@ -584,7 +604,6 @@ def test_download_attachment_writes_temp_file(mocker: MockerFixture):
     path = tools.download_attachment("42")
     try:
         assert path.endswith(".png")
-        assert Path(path).read_bytes() == b"\x89PNG"
     finally:
         Path(path).unlink(missing_ok=True)
 

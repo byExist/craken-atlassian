@@ -203,9 +203,9 @@ def download_attachment(
     page_id: PageId,
     attachment_id: Annotated[str, Field(description="Attachment id.")],
 ) -> str:
-    """Download an attachment to a temp file; returns the saved path. The file never enters the model's context — copy it elsewhere to keep it."""
-    data, content_type = client.get_attachment_content(page_id, attachment_id)
-    return write_temp(data, content_type)
+    """Download an attachment to a temp dir under its original filename; returns the saved path. The file never enters the model's context — copy it elsewhere to keep it."""
+    download = client.get_attachment_content(page_id, attachment_id)
+    return write_temp(download.data, download.name)
 
 
 def search_users(

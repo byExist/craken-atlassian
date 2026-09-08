@@ -98,13 +98,17 @@ def test_get_attachment_content_returns_bytes_and_type(confluence_api: MockServe
         "GET",
         "/wiki/rest/api/content/10/child/attachment/att-1/download",
         content=b"PDFDATA",
-        headers={"content-type": "application/pdf"},
+        headers={
+            "content-type": "application/pdf",
+            "content-disposition": 'attachment; filename="spec.pdf"',
+        },
     )
 
-    data, content_type = client.get_attachment_content("10", "att-1")
+    download = client.get_attachment_content("10", "att-1")
 
-    assert data == b"PDFDATA"
-    assert content_type == "application/pdf"
+    assert download.data == b"PDFDATA"
+    assert download.content_type == "application/pdf"
+    assert download.filename == "spec.pdf"
 
 
 # ---------------------------------------------------------------------------
