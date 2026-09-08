@@ -24,6 +24,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from atlassian.config import Auth, get_auth
+from atlassian import http
 from atlassian.confluence import client as confluence_client
 from atlassian.jira import client as jira_client
 from support import MockServer
@@ -49,13 +50,13 @@ def _install(mocker: MockerFixture, module: ModuleType) -> MockServer:
     """Point a client module's singleton at a fresh MockServer transport."""
     server = MockServer()
     mocker.patch.object(module, "_client", None)
-    mocker.patch.object(module, "get_auth", lambda: _FAKE_AUTH)
+    mocker.patch.object(http, "get_auth", lambda: _FAKE_AUTH)
 
     def factory(**kwargs: Any) -> httpx.Client:
         kwargs.setdefault("transport", httpx.MockTransport(server.handler))
         return _REAL_HTTPX_CLIENT(**kwargs)
 
-    mocker.patch.object(module.httpx, "Client", factory)
+    mocker.patch.object(http.httpx, "Client", factory)
     return server
 
 

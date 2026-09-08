@@ -20,8 +20,7 @@ from typing import Any
 
 import httpx
 
-from atlassian.hooks import error_hook
-from atlassian.config import get_auth
+from atlassian.http import make_client
 from atlassian.download import Download
 from atlassian.confluence.schema.adf import ADF
 from atlassian.confluence.schema.ancestor import MultiEntityResultAncestor
@@ -60,15 +59,7 @@ _client: httpx.Client | None = None
 def _get_client() -> httpx.Client:
     global _client  # noqa: PLW0603
     if _client is None:
-        auth = get_auth()
-        _client = httpx.Client(
-            base_url=auth.url.rstrip("/"),
-            auth=(auth.user, auth.token.get_secret_value()),
-            # No default Content-Type: httpx sets it per request (application/json
-            # for json=, multipart for files=). A fixed default would break uploads.
-            headers={"Accept": "application/json"},
-            event_hooks={"response": [error_hook("Confluence", "space")]},
-        )
+        _client = make_client("Confluence", "space")
     return _client
 
 

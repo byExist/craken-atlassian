@@ -32,16 +32,14 @@ def _bind(
     prefix: str,
     fns: list[Callable[..., Any]],
     *,
-    gated: set[str] | None = None,
+    describe: Callable[[Callable[..., Any]], str] | None = None,
 ) -> None:
+    """Register tools as ``{prefix}_{name}``; ``describe`` may rewrite a tool's description."""
     for fn in fns:
-        if gated is None:
-            mcp.tool(name=f"{prefix}_{fn.__name__}")(fn)
-        else:
-            mcp.tool(
-                name=f"{prefix}_{fn.__name__}",
-                description=jira_permissions.describe(fn, gated),
-            )(fn)
+        mcp.tool(
+            name=f"{prefix}_{fn.__name__}",
+            description=describe(fn) if describe else None,
+        )(fn)
 
 
 # --- JIRA ---
@@ -115,7 +113,7 @@ if config.write_enabled:
             jira.update_sprint,
             jira.delete_sprint,
         ],
-        gated=_gated,
+        describe=lambda fn: jira_permissions.describe(fn, _gated),
     )
 
 # --- Confluence ---
