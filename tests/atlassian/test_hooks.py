@@ -44,6 +44,20 @@ def test_hook_interpolates_service_and_scope():
     assert "Jira" not in message
 
 
+@pytest.mark.parametrize("status", [301, 302, 303, 307, 308])
+def test_redirect_responses_pass_through(status: int):
+    """httpx invokes response hooks on each hop of a followed redirect; the hook
+    must let the 3xx through or downloads die before reaching the media host."""
+    hook = error_hook("Confluence", "space")
+    hook(
+        httpx.Response(
+            status,
+            headers={"location": "https://media.example/blob"},
+            request=httpx.Request("GET", "https://x/y"),
+        )
+    )
+
+
 @pytest.mark.parametrize("status", [200, 201, 204])
 def test_success_responses_pass_through(status: int):
     hook = error_hook("Jira", "project")
@@ -117,3 +131,53 @@ def test_403_propagates_through_a_real_client(jira_api: MockServer):
 
     with pytest.raises(PermissionError):
         client.get_current_user()
+
+
+def test_confluence_download_follows_redirect_to_media_host(
+    confluence_api: MockServer,
+):
+    """Attachment downloads 302 to api.media.atlassian.com; the hook must not
+    abort on the intermediate hop."""
+    from atlassian.confluence import client
+
+    confluence_api.add(
+        "GET",
+        "/wiki/rest/api/content/10/child/attachment/att-1/download",
+        status=302,
+        headers={"location": "https://api.media.atlassian.com/file/abc/binary"},
+    )
+    confluence_api.add(
+        "GET",
+        "/file/abc/binary",
+        content=b"\x89PNG",
+        headers={"content-type": "image/png"},
+    )
+
+    data, content_type = client.get_attachment_content("10", "att-1")
+
+    assert data == b"\x89PNG"
+    assert content_type == "image/png"
+    assert confluence_api.last.url.host == "api.media.atlassian.com"
+
+
+def test_jira_download_follows_redirect_to_media_host(jira_api: MockServer):
+    from atlassian.jira import client
+
+    jira_api.add(
+        "GET",
+        "/rest/api/3/attachment/content/42",
+        status=303,
+        headers={"location": "https://api.media.atlassian.com/file/def/binary"},
+    )
+    jira_api.add(
+        "GET",
+        "/file/def/binary",
+        content=b"%PDF",
+        headers={"content-type": "application/pdf"},
+    )
+
+    data, content_type = client.get_attachment_content("42")
+
+    assert data == b"%PDF"
+    assert content_type == "application/pdf"
+    assert jira_api.last.url.host == "api.media.atlassian.com"

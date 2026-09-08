@@ -8,7 +8,10 @@ import httpx
 def error_hook(service: str, scope: str) -> Callable[[httpx.Response], None]:
     """Build an httpx response hook that turns error statuses into useful errors.
 
-    Two cases, both addressed to the LLM calling the tool rather than an end user:
+    Redirects pass through untouched: httpx runs response hooks on every hop, so
+    raising on a 3xx would abort attachment downloads before the follow to the
+    media host. Two error cases, both addressed to the LLM calling the tool
+    rather than an end user:
 
     * ``403`` — a ``{scope}``-level permission denial can't be resolved by
       retrying or by the model, so the message says not to retry and to relay the
@@ -27,7 +30,7 @@ def error_hook(service: str, scope: str) -> Callable[[httpx.Response], None]:
     """
 
     def _raise_on_error(response: httpx.Response) -> None:
-        if response.is_success:
+        if response.is_success or response.is_redirect:
             return
         response.read()
         if response.status_code == 403:
