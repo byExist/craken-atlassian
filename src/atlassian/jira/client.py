@@ -27,6 +27,10 @@ from atlassian.jira.schema.common import IssueTypeDetails, IssueTypeWithStatus
 from atlassian.jira.schema.component import Component
 from atlassian.jira.schema.epic import Epic
 from atlassian.jira.schema.field import PageBeanField
+from atlassian.jira.schema.field_meta import (
+    IssueUpdateMetadata,
+    PageOfCreateMetaIssueTypeWithField,
+)
 from atlassian.jira.schema.issue import (
     CreatedIssue,
     IssueBean,
@@ -186,6 +190,27 @@ def get_issue_type_metadata(
     )
     resp.raise_for_status()
     return PageOfCreateMetaIssueTypes.model_validate(resp.json())
+
+
+def get_create_field_metadata(
+    project_key: str,
+    issue_type_id: str,
+    *,
+    start_at: int = 0,
+    max_results: int = 50,
+) -> PageOfCreateMetaIssueTypeWithField:
+    resp = _get_client().get(
+        f"/rest/api/3/issue/createmeta/{project_key}/issuetypes/{issue_type_id}",
+        params={"startAt": start_at, "maxResults": max_results},
+    )
+    resp.raise_for_status()
+    return PageOfCreateMetaIssueTypeWithField.model_validate(resp.json())
+
+
+def get_edit_metadata(issue_key: str) -> IssueUpdateMetadata:
+    resp = _get_client().get(f"/rest/api/3/issue/{issue_key}/editmeta")
+    resp.raise_for_status()
+    return IssueUpdateMetadata.model_validate(resp.json())
 
 
 def list_issue_types() -> list[IssueTypeDetails]:

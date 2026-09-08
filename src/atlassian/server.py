@@ -59,6 +59,8 @@ _bind(
         jira.get_transitions,
         jira.get_changelogs,
         jira.get_issue_type_metadata,
+        jira.get_create_field_metadata,
+        jira.get_edit_field_metadata,
         jira.list_issue_types,
         jira.download_attachment,
         jira.get_comments,

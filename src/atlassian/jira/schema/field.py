@@ -1,6 +1,21 @@
 """Field schema."""
 
+from pydantic import Field
+
 from atlassian.jira.schema.base import JiraModel
+
+
+class JsonTypeBean(JiraModel):
+    """The data type of a field. ``type: string`` with ``system`` description/environment or ``custom`` ending in ``:textarea`` means rich text (ADF).
+
+    OpenAPI: JsonTypeBean
+    """
+
+    type: str
+    items: str | None = None
+    system: str | None = None
+    custom: str | None = None
+    custom_id: int | None = None
 
 
 class FieldDetail(JiraModel):
@@ -15,6 +30,10 @@ class FieldDetail(JiraModel):
     orderable: bool | None = None
     searchable: bool | None = None
     clause_names: list[str] = []
+    # "schema" would shadow BaseModel.schema; keep the wire name via aliases.
+    field_schema: JsonTypeBean | None = Field(
+        default=None, validation_alias="schema", serialization_alias="schema"
+    )
 
 
 class PageBeanField(JiraModel):

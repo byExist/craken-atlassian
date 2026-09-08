@@ -63,7 +63,7 @@ Plus boards, sprints, epics, worklogs, links, fields, labels, attachments, inlin
 
 **Jira** (`jira_*`)
 
-- **Issue** — `search_issues` `get_issue` `get_changelogs` `get_transitions` `get_issue_type_metadata` `list_issue_types` `create_issue` `update_issue` `change_issue_type` `delete_issue` `assign_issue` `transition_issue`
+- **Issue** — `search_issues` `get_issue` `get_changelogs` `get_transitions` `get_issue_type_metadata` `get_create_field_metadata` `get_edit_field_metadata` `list_issue_types` `create_issue` `update_issue` `change_issue_type` `delete_issue` `assign_issue` `transition_issue`
 - **Comment** — `get_comments` `add_comment` `edit_comment` `delete_comment`
 - **Worklog** — `get_worklogs` `add_worklog` `update_worklog` `delete_worklog`
 - **Issue link** — `get_link_types` `create_issue_link` `remove_issue_link`

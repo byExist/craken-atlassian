@@ -9,6 +9,7 @@ class IssueTypeCreateMeta(JiraModel):
     OpenAPI: IssueTypeIssueCreateMetadata
     """
 
+    id: str | None = None
     name: str | None = None
     subtask: bool | None = None
 

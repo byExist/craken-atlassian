@@ -14,6 +14,8 @@ from pydantic import ValidationError
 import payloads
 from atlassian.jira.schema.base import JiraModel
 from atlassian.jira.schema.common import IssueTypeWithStatus
+from atlassian.jira.schema.field import FieldDetail
+from atlassian.jira.schema.field_meta import FieldCreateMetadata
 from atlassian.jira.schema.issue import (
     IssueBean,
     JiraIssueFields,
@@ -194,6 +196,34 @@ def test_required_fields(
         del payload[field]
         with pytest.raises(ValidationError):
             model.model_validate(payload)
+
+
+def test_field_schema_keeps_wire_name_schema():
+    detail = FieldDetail.model_validate(
+        {"id": "customfield_1", "schema": {"type": "string", "custom": "x:textarea"}}
+    )
+
+    assert detail.field_schema is not None
+    assert detail.field_schema.custom == "x:textarea"
+    assert detail.model_dump(by_alias=True)["schema"] == {
+        "type": "string",
+        "custom": "x:textarea",
+    }
+
+
+@pytest.mark.parametrize("missing", ["fieldId", "key", "name", "required", "schema"])
+def test_field_create_metadata_requires_spec_required_fields(missing: str):
+    payload: dict[str, object] = {
+        "fieldId": "summary",
+        "key": "summary",
+        "name": "Summary",
+        "required": True,
+        "schema": {"type": "string"},
+    }
+    FieldCreateMetadata.model_validate(payload)
+    del payload[missing]
+    with pytest.raises(ValidationError):
+        FieldCreateMetadata.model_validate(payload)
 
 
 def test_issue_link_carries_one_direction():

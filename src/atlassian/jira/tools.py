@@ -15,6 +15,10 @@ from atlassian.jira.schema.common import IssueTypeDetails, IssueTypeWithStatus
 from atlassian.jira.schema.component import Component
 from atlassian.jira.schema.epic import Epic
 from atlassian.jira.schema.field import PageBeanField
+from atlassian.jira.schema.field_meta import (
+    IssueUpdateMetadata,
+    PageOfCreateMetaIssueTypeWithField,
+)
 from atlassian.jira.schema.issue import (
     IssueBean,
     SearchAndReconcileResults,
@@ -377,6 +381,34 @@ def get_issue_type_metadata(
     return client.get_issue_type_metadata(
         project_key, start_at=start_at, max_results=limit
     )
+
+
+def _issue_type_id(project_key: str, issue_type: str) -> str:
+    page = client.get_issue_type_metadata(project_key, start_at=0, max_results=50)
+    for it in page.issue_types:
+        if it.name == issue_type and it.id is not None:
+            return it.id
+    raise ValueError(f"no issue type named {issue_type!r} in project {project_key}")
+
+
+def get_create_field_metadata(
+    project_key: ProjectKey,
+    issue_type: Annotated[str, Field(description="Issue type name, e.g. Task, Bug.")],
+    start_at: Offset = 0,
+    limit: Limit = 50,
+) -> PageOfCreateMetaIssueTypeWithField:
+    """Get the fields available when creating an issue of this type: which are required and each field's schema."""
+    return client.get_create_field_metadata(
+        project_key,
+        _issue_type_id(project_key, issue_type),
+        start_at=start_at,
+        max_results=limit,
+    )
+
+
+def get_edit_field_metadata(issue_key: IssueKey) -> IssueUpdateMetadata:
+    """Get the fields editable on an issue: which are required and each field's schema."""
+    return client.get_edit_metadata(issue_key)
 
 
 def list_issue_types() -> list[IssueTypeDetails]:

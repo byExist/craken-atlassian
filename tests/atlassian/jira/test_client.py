@@ -242,6 +242,58 @@ def test_search_fields_includes_query_when_given(jira_api: MockServer):
     assert jira_api.last.url.params["query"] == "story points"
 
 
+def test_get_create_field_metadata_uses_issue_type_id_path(jira_api: MockServer):
+    jira_api.add(
+        "GET",
+        "/rest/api/3/issue/createmeta/ABC/issuetypes/10001",
+        json={
+            "fields": [
+                {
+                    "fieldId": "customfield_1",
+                    "key": "customfield_1",
+                    "name": "Notes",
+                    "required": False,
+                    "schema": {
+                        "type": "string",
+                        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textarea",
+                    },
+                }
+            ],
+            "total": 1,
+        },
+    )
+
+    page = client.get_create_field_metadata("ABC", "10001", start_at=5, max_results=10)
+
+    assert jira_api.last.url.params["startAt"] == "5"
+    assert jira_api.last.url.params["maxResults"] == "10"
+    assert page.fields[0].field_id == "customfield_1"
+    assert page.fields[0].field_schema.custom is not None
+    assert page.fields[0].field_schema.custom.endswith(":textarea")
+
+
+def test_get_edit_metadata_parses_fields_by_key(jira_api: MockServer):
+    jira_api.add(
+        "GET",
+        "/rest/api/3/issue/A-1/editmeta",
+        json={
+            "fields": {
+                "summary": {
+                    "key": "summary",
+                    "name": "Summary",
+                    "required": True,
+                    "schema": {"type": "string", "system": "summary"},
+                }
+            }
+        },
+    )
+
+    meta = client.get_edit_metadata("A-1")
+
+    assert meta.fields["summary"].required is True
+    assert meta.fields["summary"].field_schema.system == "summary"
+
+
 def test_search_users_passes_query(jira_api: MockServer):
     jira_api.add("GET", "/rest/api/3/user/search", json=[{"accountId": "u1"}])
 

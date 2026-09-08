@@ -27,6 +27,11 @@ from atlassian.jira.schema.issue import (
     SearchAndReconcileResults,
     SearchResults,
 )
+from atlassian.jira.schema.field_meta import PageOfCreateMetaIssueTypeWithField
+from atlassian.jira.schema.issue_type_meta import (
+    IssueTypeCreateMeta,
+    PageOfCreateMetaIssueTypes,
+)
 from atlassian.jira.schema.sprint import SprintBean
 from atlassian.jira.schema.version import ProjectVersion
 from atlassian.jira.schema.worklog import PageOfWorklogs, Worklog
@@ -380,6 +385,41 @@ def test_create_issue_passes_standard_fields(mocker: MockerFixture):
     )
 
 
+def test_get_create_field_metadata_resolves_issue_type_name(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "get_issue_type_metadata",
+        return_value=PageOfCreateMetaIssueTypes(
+            issue_types=[
+                IssueTypeCreateMeta(id="10000", name="Task"),
+                IssueTypeCreateMeta(id="10001", name="Bug"),
+            ]
+        ),
+    )
+    page = PageOfCreateMetaIssueTypeWithField()
+    fields = mocker.patch.object(client, "get_create_field_metadata", return_value=page)
+
+    out = tools.get_create_field_metadata("ABC", "Bug", limit=10)
+
+    assert fields.call_args == call("ABC", "10001", start_at=0, max_results=10)
+    assert out is page
+
+
+def test_get_create_field_metadata_rejects_unknown_issue_type(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "get_issue_type_metadata",
+        return_value=PageOfCreateMetaIssueTypes(
+            issue_types=[IssueTypeCreateMeta(id="10000", name="Task")]
+        ),
+    )
+    fields = mocker.patch.object(client, "get_create_field_metadata")
+
+    with pytest.raises(ValueError, match="Story"):
+        tools.get_create_field_metadata("ABC", "Story")
+    fields.assert_not_called()
+
+
 def test_add_comment_converts_and_returns_id(mocker: MockerFixture):
     mock_comment = MagicMock()
     mock_comment.id = "99"
@@ -669,6 +709,11 @@ def test_upload_attachment_reads_file_then_calls_client(
             lambda: tools.get_issue_type_metadata("ABC", limit=10),
             "get_issue_type_metadata",
             call("ABC", start_at=0, max_results=10),
+        ),
+        (
+            lambda: tools.get_edit_field_metadata("A-1"),
+            "get_edit_metadata",
+            call("A-1"),
         ),
         (lambda: tools.get_transitions("A-1"), "get_transitions", call("A-1")),
         (lambda: tools.get_link_types(), "get_link_types", call()),
