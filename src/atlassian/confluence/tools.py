@@ -59,6 +59,17 @@ def _next_version(
     return number + 1
 
 
+def _resolve_space_id(space: str) -> str:
+    """Numeric space id for a ``SpaceKeyOrId``: digits pass through, a key is looked up."""
+    if space.isdigit():
+        return space
+    result = client.list_spaces(keys=[space], limit=1)
+    space_id = result.results[0].id if result.results else None
+    if space_id is None:
+        raise ValueError(f"no Confluence space found with key {space!r}")
+    return space_id
+
+
 # --- User ---
 
 
@@ -107,12 +118,7 @@ def list_spaces(
 
 def get_space(space: SpaceKeyOrId) -> Space:
     """Get a space's details. Accepts a space key or numeric id."""
-    if space.isdigit():
-        return client.get_space(space)
-    result = client.list_spaces(keys=[space], limit=1)
-    if not result.results:
-        raise ValueError(f"no Confluence space found with key {space!r}")
-    return result.results[0]
+    return client.get_space(_resolve_space_id(space))
 
 
 # --- Page ---
@@ -135,7 +141,7 @@ def list_pages(
 ) -> MultiEntityResultPage:
     """List pages in a space. Body is omitted; use get_page for full content."""
     result = client.list_pages(
-        client.resolve_space_id(space), title=title, limit=limit, cursor=cursor
+        _resolve_space_id(space), title=title, limit=limit, cursor=cursor
     )
     for page in result.results:
         page.body = None
@@ -244,7 +250,7 @@ def create_page(
         content = read_body(from_file)
     adf = parse(content)
     page = client.create_page(
-        client.resolve_space_id(space),
+        _resolve_space_id(space),
         title,
         body=adf,
         parent_id=parent_id,
@@ -297,7 +303,7 @@ def list_blog_posts(
     cursor: Cursor = None,
 ) -> MultiEntityResultBlogPost:
     """List blog posts. Body is omitted; use get_blog_post for full content."""
-    space_id = client.resolve_space_id(space) if space is not None else None
+    space_id = _resolve_space_id(space) if space is not None else None
     result = client.list_blog_posts(space_id=space_id, limit=limit, cursor=cursor)
     for post in result.results:
         post.body = None
@@ -338,7 +344,7 @@ def create_blog_post(
     if from_file is not None:
         content = read_body(from_file)
     post = client.create_blog_post(
-        client.resolve_space_id(space),
+        _resolve_space_id(space),
         title,
         body=parse(content),
     )

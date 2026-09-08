@@ -61,13 +61,37 @@ def test_get_space_by_key_resolves_via_list_spaces(mocker: MockerFixture):
         "list_spaces",
         return_value=MultiEntityResultSpace(results=[Space(id="99", key="DEV")]),
     )
-    get_space = mocker.patch.object(client, "get_space")
+    get_space = mocker.patch.object(client, "get_space", return_value=Space(id="99"))
 
     out = tools.get_space("DEV")
 
     assert out.id == "99"
     list_spaces.assert_called_once_with(keys=["DEV"], limit=1)
-    get_space.assert_not_called()
+    get_space.assert_called_once_with("99")
+
+
+def test_list_pages_resolves_space_key_to_id(mocker: MockerFixture):
+    mocker.patch.object(
+        client,
+        "list_spaces",
+        return_value=MultiEntityResultSpace(results=[Space(id="99", key="DEV")]),
+    )
+    list_pages = mocker.patch.object(
+        client, "list_pages", return_value=MultiEntityResultPage(results=[])
+    )
+
+    tools.list_pages("DEV")
+
+    assert list_pages.call_args == call("99", title=None, limit=25, cursor=None)
+
+
+def test_list_pages_raises_when_space_key_missing(mocker: MockerFixture):
+    mocker.patch.object(
+        client, "list_spaces", return_value=MultiEntityResultSpace(results=[])
+    )
+
+    with pytest.raises(ValueError, match="no Confluence space"):
+        tools.list_pages("NOPE")
 
 
 def test_get_space_by_key_raises_when_missing(mocker: MockerFixture):
