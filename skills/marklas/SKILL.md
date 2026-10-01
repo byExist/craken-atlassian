@@ -1,5 +1,5 @@
 ---
-description: "Writing and editing Jira/Confluence bodies through the atlassian plugin. Apply when composing new issue/page/comment content (write Markdown — marklas converts it to ADF) or editing an existing body (Markdown with adf= attributes from marklas, the ADF↔Markdown converter)."
+description: "Use when adding to or editing an existing Jira/Confluence body, or when the content needs elements plain Markdown cannot express, such as panels, mentions or status."
 user-invocable: false
 ---
 
