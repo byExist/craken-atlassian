@@ -1,5 +1,7 @@
 """Per-field create/edit metadata schema."""
 
+from typing import Any
+
 from pydantic import Field
 
 from atlassian.jira.schema.base import JiraModel
@@ -20,6 +22,7 @@ class FieldCreateMetadata(JiraModel):
     field_schema: JsonTypeBean = Field(
         validation_alias="schema", serialization_alias="schema"
     )
+    allowed_values: list[dict[str, Any]] | None = None
 
 
 class PageOfCreateMetaIssueTypeWithField(JiraModel):
@@ -47,6 +50,7 @@ class FieldMetadata(JiraModel):
     field_schema: JsonTypeBean = Field(
         validation_alias="schema", serialization_alias="schema"
     )
+    allowed_values: list[dict[str, Any]] | None = None
 
 
 class IssueUpdateMetadata(JiraModel):

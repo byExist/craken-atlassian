@@ -557,6 +557,14 @@ def test_get_transitions_expands_screen_fields(jira_api: MockServer):
                             "name": "Resolution",
                             "required": True,
                             "schema": {"type": "resolution", "system": "resolution"},
+                            "allowedValues": [
+                                {
+                                    "self": "https://example.atlassian.net/rest/api/3/resolution/10100",
+                                    "id": "10100",
+                                    "name": "완료",
+                                    "description": "이 이슈에 대한 작업이 완료되었습니다.",
+                                }
+                            ],
                         }
                     },
                 }
@@ -570,7 +578,12 @@ def test_get_transitions_expands_screen_fields(jira_api: MockServer):
     closed = transitions.transitions[0]
     assert closed.has_screen is True
     assert closed.fields is not None
-    assert closed.fields["resolution"].required is True
+    resolution = closed.fields["resolution"]
+    assert resolution.required is True
+    assert resolution.allowed_values is not None
+    assert [(v["id"], v["name"]) for v in resolution.allowed_values] == [
+        ("10100", "완료")
+    ]
 
 
 def test_transition_issue_posts_transition_id(jira_api: MockServer):
