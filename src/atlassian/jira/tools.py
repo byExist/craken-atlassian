@@ -121,7 +121,7 @@ def get_project_components(project_key: ProjectKey) -> list[Component]:
 
 
 def get_project_statuses(project_key: ProjectKey) -> list[IssueTypeWithStatus]:
-    """Get statuses per issue type in a project. Useful for finding JQL status values."""
+    """Get statuses per issue type in a project. Use a status's id in JQL; its name may be translated."""
     return client.get_project_statuses(project_key)
 
 
@@ -140,6 +140,7 @@ _DEFAULT_ISSUE_FIELDS = [
     "labels",
     "created",
     "updated",
+    "resolution",
     "resolutiondate",
     "issuelinks",
     "attachment",
@@ -151,7 +152,14 @@ _SEARCH_ISSUE_FIELDS = [
 
 
 def search_issues(
-    jql: Annotated[str, Field(description="JQL query.")],
+    jql: Annotated[
+        str,
+        Field(
+            description="JQL query. Refer to statuses, resolutions and priorities by id "
+            "(status = <id>): their names in responses may be translated, and a "
+            "translated name matches nothing without raising an error."
+        ),
+    ],
     limit: Limit = 50,
     next_page_token: Annotated[
         str | None,

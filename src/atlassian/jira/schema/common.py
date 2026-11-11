@@ -19,6 +19,7 @@ class StatusDetails(JiraModel):
     OpenAPI: StatusDetails
     """
 
+    id: str | None = None
     name: str | None = None
     status_category: StatusCategory | None = None
 
@@ -40,6 +41,17 @@ class Priority(JiraModel):
     OpenAPI: Priority
     """
 
+    id: str | None = None
+    name: str | None = None
+
+
+class Resolution(JiraModel):
+    """Issue resolution (e.g. 'Done', "Won't Do").
+
+    OpenAPI: Resolution
+    """
+
+    id: str | None = None
     name: str | None = None
 
 

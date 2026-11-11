@@ -5,7 +5,12 @@ from pydantic import ConfigDict, Field
 from atlassian.jira.schema.base import JiraModel
 from atlassian.jira.schema.adf import ADF
 from atlassian.jira.schema.attachment import Attachment
-from atlassian.jira.schema.common import IssueTypeDetails, Priority, StatusDetails
+from atlassian.jira.schema.common import (
+    IssueTypeDetails,
+    Priority,
+    Resolution,
+    StatusDetails,
+)
 from atlassian.jira.schema.issue_link import IssueLink
 from atlassian.jira.schema.user import User
 
@@ -30,6 +35,7 @@ class JiraIssueFields(JiraModel):
     labels: list[str] = []
     created: str | None = None
     updated: str | None = None
+    resolution: Resolution | None = None
     resolution_date: str | None = Field(default=None, validation_alias="resolutiondate")
     issue_links: list[IssueLink] = Field(
         default_factory=list[IssueLink], validation_alias="issuelinks"

@@ -164,6 +164,35 @@ def test_nested_models_parse():
     assert fields.assignee.account_id == "u-1"
 
 
+def test_jql_constants_keep_ids():
+    """Names come back translated and JQL only matches them by id."""
+    fields = JiraIssueFields.model_validate(
+        {
+            "status": {"self": "s", "id": "6", "name": "종료"},
+            "priority": {"self": "p", "id": "3", "name": "주요"},
+            "resolution": {
+                "self": "r",
+                "id": "6",
+                "description": "Verified on Production",
+                "name": "배포 되어 확인 함",
+            },
+        }
+    )
+
+    dumped = fields.model_dump(by_alias=True)
+    assert dumped["status"] == {"id": "6", "name": "종료"}
+    assert dumped["priority"] == {"id": "3", "name": "주요"}
+    assert dumped["resolution"] == {"id": "6", "name": "배포 되어 확인 함"}
+
+
+def test_unresolved_issue_omits_resolution():
+    dumped = JiraIssueFields.model_validate({"resolution": None}).model_dump(
+        by_alias=True
+    )
+
+    assert "resolution" not in dumped
+
+
 def test_search_and_reconcile_results_aliases():
     result = SearchAndReconcileResults.model_validate(
         {"issues": [{"key": "A-1"}], "nextPageToken": "tok", "isLast": False}
