@@ -1,5 +1,6 @@
 {
   "name": "atlassian",
+  "version": "0.2.0",
   "description": "Atlassian (JIRA, Confluence) integration via MCP",
   "repository": "https://github.com/byExist/craken-atlassian",
   "defaultEnabled": false,
