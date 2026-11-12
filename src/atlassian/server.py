@@ -2,6 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.tools import Tool
 
 from atlassian.config import config
 from atlassian.confluence import tools as confluence
@@ -25,7 +26,18 @@ def _instructions() -> str:
     )
 
 
-mcp = FastMCP("atlassian", instructions=_instructions())
+_tools: list[Tool] = []
+
+
+def _strict_tool(fn: Callable[..., Any], name: str, description: str | None) -> Tool:
+    tool = Tool.from_function(fn, name=name, description=description)
+    # FastMCP drops arguments a tool does not declare, so a misnamed optional
+    # argument would be ignored while the call still succeeds.
+    args = tool.fn_metadata.arg_model
+    args.model_config["extra"] = "forbid"
+    args.model_rebuild(force=True)
+    tool.parameters = args.model_json_schema(by_alias=True)
+    return tool
 
 
 def _bind(
@@ -36,10 +48,13 @@ def _bind(
 ) -> None:
     """Register tools as ``{prefix}_{name}``; ``describe`` may rewrite a tool's description."""
     for fn in fns:
-        mcp.tool(
-            name=f"{prefix}_{fn.__name__}",
-            description=describe(fn) if describe else None,
-        )(fn)
+        _tools.append(
+            _strict_tool(
+                fn,
+                f"{prefix}_{fn.__name__}",
+                describe(fn) if describe else None,
+            )
+        )
 
 
 # --- JIRA ---
@@ -179,3 +194,5 @@ if config.write_enabled:
             confluence.update_task,
         ],
     )
+
+mcp = FastMCP("atlassian", instructions=_instructions(), tools=_tools)

@@ -7,7 +7,10 @@ touches the network.
 """
 
 import importlib
+from types import ModuleType
 
+import pytest
+from mcp.server.fastmcp.exceptions import ToolError
 from pytest_mock import MockerFixture
 
 # Representative tools per category.
@@ -17,13 +20,13 @@ JIRA_WRITE = ["jira_create_issue", "jira_update_issue", "jira_delete_issue"]
 CONFLUENCE_WRITE = ["confluence_create_page", "confluence_delete_page"]
 
 
-def _tool_map(
+def _reload(
     mocker: MockerFixture,
     *,
     write_enabled: bool,
     unavailable: set[str] | None = None,
-) -> dict[str, str]:
-    """Reload server.py under the given settings; return {tool_name: description}."""
+) -> ModuleType:
+    """Reload server.py under the given settings."""
     import atlassian.server as server_module
     from atlassian.config import config
     from atlassian.jira import permissions
@@ -32,7 +35,19 @@ def _tool_map(
     mocker.patch.object(
         permissions, "globally_unavailable", lambda: unavailable or set()
     )
-    server_module = importlib.reload(server_module)
+    return importlib.reload(server_module)
+
+
+def _tool_map(
+    mocker: MockerFixture,
+    *,
+    write_enabled: bool,
+    unavailable: set[str] | None = None,
+) -> dict[str, str]:
+    """Reload server.py under the given settings; return {tool_name: description}."""
+    server_module = _reload(
+        mocker, write_enabled=write_enabled, unavailable=unavailable
+    )
     return {
         tool.name: tool.description or ""
         for tool in server_module.mcp._tool_manager.list_tools()
@@ -89,6 +104,44 @@ def test_all_tools_are_namespaced(mocker: MockerFixture):
     assert tools  # sanity: something registered
     assert all(name.startswith(("jira_", "confluence_")) for name in tools)
     assert all(desc for desc in tools.values())  # every tool keeps its docstring
+
+
+# --- unknown arguments ---
+
+
+def test_every_tool_schema_forbids_unknown_arguments(mocker: MockerFixture):
+    server_module = _reload(mocker, write_enabled=True)
+
+    tools = server_module.mcp._tool_manager.list_tools()
+    assert tools
+    assert all(tool.parameters["additionalProperties"] is False for tool in tools)
+
+
+@pytest.mark.anyio
+async def test_unknown_argument_is_rejected_before_the_tool_runs(
+    mocker: MockerFixture,
+):
+    server_module = _reload(mocker, write_enabled=True)
+    from atlassian.jira import client
+
+    update = mocker.patch.object(client, "update_issue")
+
+    with pytest.raises(ToolError, match="priority"):
+        await server_module.mcp.call_tool(
+            "jira_update_issue", {"issue_key": "A-1", "priority": "주요"}
+        )
+    update.assert_not_called()
+
+
+def test_extra_fields_still_take_any_field_id(mocker: MockerFixture):
+    server_module = _reload(mocker, write_enabled=True)
+    tool = server_module.mcp._tool_manager.get_tool("jira_update_issue")
+
+    args = tool.fn_metadata.arg_model.model_validate(
+        {"issue_key": "A-1", "extra_fields": {"customfield_10016": 5}}
+    )
+
+    assert args.model_dump()["extra_fields"] == {"customfield_10016": 5}
 
 
 # --- permission gating via describe() ---
