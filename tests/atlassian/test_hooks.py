@@ -118,7 +118,7 @@ def test_400_propagates_through_a_real_client(jira_api: MockServer):
     )
 
     with pytest.raises(httpx.HTTPStatusError) as exc:
-        client.create_issue("SAM", "x", priority="주요")
+        client.create_issue("SAM", "x", priority_id="3")
 
     assert "Field 'priority' cannot be set." in str(exc.value)
 

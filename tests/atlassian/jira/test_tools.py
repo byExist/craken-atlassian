@@ -257,7 +257,7 @@ def test_create_issue_converts_markdown_to_adf(mocker: MockerFixture):
         assignee=None,
         parent_key=None,
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields=None,
     )
     assert out == "A-9"
@@ -278,7 +278,7 @@ def test_create_issue_passes_none_when_no_description(mocker: MockerFixture):
         assignee=None,
         parent_key=None,
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields=None,
     )
 
@@ -314,7 +314,7 @@ def test_create_issue_passes_parent(mocker: MockerFixture):
         assignee=None,
         parent_key="ABC-1",
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields=None,
     )
 
@@ -331,7 +331,7 @@ def test_update_issue_converts_and_returns_ok(mocker: MockerFixture):
         parent_key=None,
         assignee=None,
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields=None,
     )
 
@@ -352,7 +352,7 @@ def test_update_issue_passes_parent(mocker: MockerFixture):
         parent_key="A-2",
         assignee=None,
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields=None,
     )
 
@@ -360,7 +360,7 @@ def test_update_issue_passes_parent(mocker: MockerFixture):
 def test_update_issue_passes_standard_fields(mocker: MockerFixture):
     update = mocker.patch.object(client, "update_issue")
 
-    tools.update_issue("A-1", due_date="2026-06-17", priority="High", assignee="acc-1")
+    tools.update_issue("A-1", due_date="2026-06-17", priority_id="2", assignee="acc-1")
 
     assert update.call_args == call(
         "A-1",
@@ -369,7 +369,7 @@ def test_update_issue_passes_standard_fields(mocker: MockerFixture):
         parent_key=None,
         assignee="acc-1",
         due_date="2026-06-17",
-        priority="High",
+        priority_id="2",
         extra_fields=None,
     )
 
@@ -386,7 +386,7 @@ def test_update_issue_passes_extra_fields(mocker: MockerFixture):
         parent_key=None,
         assignee=None,
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields={"customfield_10016": 5},
     )
 
@@ -400,7 +400,7 @@ def test_create_issue_passes_standard_fields(mocker: MockerFixture):
         "ABC",
         "T",
         due_date="2026-06-17",
-        priority="High",
+        priority_id="2",
         extra_fields={"customfield_10016": 3},
     )
 
@@ -412,7 +412,7 @@ def test_create_issue_passes_standard_fields(mocker: MockerFixture):
         assignee=None,
         parent_key=None,
         due_date="2026-06-17",
-        priority="High",
+        priority_id="2",
         extra_fields={"customfield_10016": 3},
     )
 
@@ -999,6 +999,6 @@ def test_update_issue_reads_from_file(mocker: MockerFixture, tmp_path: Path):
         parent_key=None,
         assignee=None,
         due_date=None,
-        priority=None,
+        priority_id=None,
         extra_fields=None,
     )

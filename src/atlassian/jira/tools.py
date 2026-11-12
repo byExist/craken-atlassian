@@ -53,6 +53,14 @@ ExtraFields: TypeAlias = Annotated[
         description="Other fields by id, e.g. {'customfield_10016': 5}. Multi-line text (textarea) fields take Markdown."
     ),
 ]
+PriorityId: TypeAlias = Annotated[
+    str | None,
+    Field(
+        description="Priority id: an issue's priority.id, or allowedValues in "
+        "get_create_field_metadata / get_edit_field_metadata. Names may be "
+        "translated and are then rejected."
+    ),
+]
 ParentKey: TypeAlias = Annotated[
     str | None,
     Field(
@@ -232,10 +240,7 @@ def create_issue(
     due_date: Annotated[
         str | None, Field(description="Due date as YYYY-MM-DD.")
     ] = None,
-    priority: Annotated[
-        str | None,
-        Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest."),
-    ] = None,
+    priority_id: PriorityId = None,
     extra_fields: ExtraFields = None,
 ) -> str:
     """Create an issue; returns the issue key. Provide description inline or via from_file, not both."""
@@ -251,7 +256,7 @@ def create_issue(
         assignee=assignee,
         parent_key=parent,
         due_date=due_date,
-        priority=priority,
+        priority_id=priority_id,
         extra_fields=_markdown_fields_to_adf(
             extra_fields, lambda: _create_field_schemas(project_key, issue_type)
         ),
@@ -278,10 +283,7 @@ def update_issue(
     due_date: Annotated[
         str | None, Field(description="Due date as YYYY-MM-DD.")
     ] = None,
-    priority: Annotated[
-        str | None,
-        Field(description="Priority name, e.g. Highest, High, Medium, Low, Lowest."),
-    ] = None,
+    priority_id: PriorityId = None,
     extra_fields: ExtraFields = None,
 ) -> Ok:
     """Update an issue. Provide description inline or via from_file, not both."""
@@ -296,7 +298,7 @@ def update_issue(
         parent_key=parent,
         assignee=assignee,
         due_date=due_date,
-        priority=priority,
+        priority_id=priority_id,
         extra_fields=_markdown_fields_to_adf(
             extra_fields, lambda: _edit_field_schemas(issue_key)
         ),

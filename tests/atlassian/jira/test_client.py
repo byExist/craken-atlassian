@@ -409,11 +409,11 @@ def test_create_issue_sets_parent(jira_api: MockServer):
 def test_create_issue_sets_standard_fields(jira_api: MockServer):
     jira_api.add("POST", "/rest/api/3/issue", json={"key": "ABC-9"})
 
-    client.create_issue("ABC", "T", due_date="2026-06-17", priority="High")
+    client.create_issue("ABC", "T", due_date="2026-06-17", priority_id="2")
 
     body = jira_api.body(jira_api.last)
     assert body["fields"]["duedate"] == "2026-06-17"
-    assert body["fields"]["priority"] == {"name": "High"}
+    assert body["fields"]["priority"] == {"id": "2"}
 
 
 def test_create_issue_merges_extra_fields(jira_api: MockServer):
@@ -430,11 +430,11 @@ def test_create_issue_named_field_overrides_extra_fields(jira_api: MockServer):
     jira_api.add("POST", "/rest/api/3/issue", json={"key": "ABC-9"})
 
     client.create_issue(
-        "ABC", "T", priority="Low", extra_fields={"priority": {"name": "High"}}
+        "ABC", "T", priority_id="4", extra_fields={"priority": {"id": "2"}}
     )
 
     body = jira_api.body(jira_api.last)
-    assert body["fields"]["priority"] == {"name": "Low"}
+    assert body["fields"]["priority"] == {"id": "4"}
 
 
 def test_update_issue_puts_only_provided_fields(jira_api: MockServer):
@@ -459,12 +459,12 @@ def test_update_issue_sets_standard_fields(jira_api: MockServer):
     jira_api.add("PUT", "/rest/api/3/issue/ABC-1", json={})
 
     client.update_issue(
-        "ABC-1", due_date="2026-06-17", priority="High", assignee="acc-1"
+        "ABC-1", due_date="2026-06-17", priority_id="2", assignee="acc-1"
     )
 
     body = jira_api.body(jira_api.last)
     assert body["fields"]["duedate"] == "2026-06-17"
-    assert body["fields"]["priority"] == {"name": "High"}
+    assert body["fields"]["priority"] == {"id": "2"}
     assert body["fields"]["assignee"] == {"accountId": "acc-1"}
 
 
@@ -491,11 +491,11 @@ def test_update_issue_named_field_overrides_extra_fields(jira_api: MockServer):
     jira_api.add("PUT", "/rest/api/3/issue/ABC-1", json={})
 
     client.update_issue(
-        "ABC-1", priority="Low", extra_fields={"priority": {"name": "High"}}
+        "ABC-1", priority_id="4", extra_fields={"priority": {"id": "2"}}
     )
 
     body = jira_api.body(jira_api.last)
-    assert body["fields"]["priority"] == {"name": "Low"}
+    assert body["fields"]["priority"] == {"id": "4"}
 
 
 def test_change_issue_type_sets_parent(jira_api: MockServer):

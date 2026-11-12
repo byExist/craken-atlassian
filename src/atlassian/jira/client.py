@@ -489,7 +489,7 @@ def create_issue(
     assignee: str | None = None,
     parent_key: str | None = None,
     due_date: str | None = None,
-    priority: str | None = None,
+    priority_id: str | None = None,
     extra_fields: dict[str, Any] | None = None,
 ) -> CreatedIssue:
     fields: dict[str, Any] = {**(extra_fields or {})}
@@ -508,8 +508,8 @@ def create_issue(
         fields["parent"] = {"key": parent_key}
     if due_date is not None:
         fields["duedate"] = due_date
-    if priority is not None:
-        fields["priority"] = {"name": priority}
+    if priority_id is not None:
+        fields["priority"] = {"id": priority_id}
     resp = _get_client().post("/rest/api/3/issue", json={"fields": fields})
     resp.raise_for_status()
     return CreatedIssue.model_validate(resp.json())
@@ -523,7 +523,7 @@ def update_issue(
     parent_key: str | None = None,
     assignee: str | None = None,
     due_date: str | None = None,
-    priority: str | None = None,
+    priority_id: str | None = None,
     extra_fields: dict[str, Any] | None = None,
 ) -> None:
     fields: dict[str, Any] = {**(extra_fields or {})}
@@ -537,8 +537,8 @@ def update_issue(
         fields["assignee"] = {"accountId": None if assignee == UNASSIGNED else assignee}
     if due_date is not None:
         fields["duedate"] = due_date
-    if priority is not None:
-        fields["priority"] = {"name": priority}
+    if priority_id is not None:
+        fields["priority"] = {"id": priority_id}
     resp = _get_client().put(
         f"/rest/api/3/issue/{issue_key}",
         json={"fields": fields},
